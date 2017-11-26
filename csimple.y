@@ -15,7 +15,7 @@ void printtree ( node *tree);
 %token BOOLEAN,CHAR,VOID,INT,STRING,INTP,CHARP /*declerations*/
 %token IF,ELSE /*if\else*/
 %token WHILE,DO,FOR /*loops*/
-%token RETURN,NULL /**/
+%token RETURN, _NULL /**/
 %token AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE/*operators*/
 %token IDENTIFIERE,NUM /*values*/
 %token SEMICOLON,COMMA
