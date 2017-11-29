@@ -6,7 +6,6 @@ typedef struct node
 	{ char *token;
 	  struct node *left;
 	  struct node *right;
-	  int a;
 	} node;
 node *mknode ( char *token , node *left, node *right);
 void printtree ( node *tree);
