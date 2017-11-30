@@ -1,3 +1,11 @@
 if(a==b)
-{ int c = 5; int d = c;}else {int v=3;};
+{ 
+    int c = 5; 
+    int d = c;
+    }
+    else
+     
+    {
+         int v=3;
+        };
 

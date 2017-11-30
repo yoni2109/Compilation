@@ -1,5 +1,5 @@
 %{
-int counter = 1;
+int counter = 0;
 %}
 %%
 "boolean" return BOOLEAN;

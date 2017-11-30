@@ -22,9 +22,7 @@ void printtree ( node *tree);
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
 %%
-recived_program: lines {printtree($1);}
-
-
+recived_program: lines {printtree($1);}  /*recived program is the first reduce terminal*/
 
 lines:  line SEMICOLON nextline{ $$ = mknode(NULL,$1,mknode(";",$3,NULL));}
 
@@ -32,14 +30,13 @@ nextline: lines | /*espilon*/
 
 line:  	statement
 
-statement: 	decleration_statement 
+statement: 	decleration_statement  /*statements as if \ if else \ loops \ functions*/
 		| decleration_and_set
 		| if_statement
-//		| else_statement
 //		| loop_statement
 //		| function_statement
 
-expr:		expr PLUS expr { $$ = mknode("+",$1,$2);}
+expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
 		| expr DIV expr{ $$=mknode("/",$1,$3);}		
@@ -57,7 +54,7 @@ expr:		expr PLUS expr { $$ = mknode("+",$1,$2);}
 		
 		
 
-if_statement: 	IF wraped_expr code_block { $$=mknode("if",$2,$3);} 
+if_statement:	IF wraped_expr code_block { $$=mknode("if",$2,$3);} 
 
 wraped_expr: 	LEFT_CIRC_BRAK exprinbrak{ $$=mknode("(",$2,NULL);}
 
@@ -69,7 +66,7 @@ block: 		lines RIGHT_BLOCK_BRAK else_statement{ $$=mknode("}",$1,$3);}
 
 else_statement: ELSE code_block{ $$=mknode("else",$2,NULL);} | /*epsilon*/
 
-//resume: 	COMMA decexpr { $$=mknode(yytext,$2,NULL);}| /*epsilon*/
+//resume: 	COMMA decexpr { $$=mknode(yytext,$2,NULL);}| /*epsilon*/ 
 
 //decexpr: 	ident resume| set_statement resume  
 
@@ -84,12 +81,12 @@ decleration_and_set: type set_statement {$$ = mknode(NULL,$1,$2);}
 			
 
 type: 	BOOLEAN{ $$=mknode(yytext,NULL,NULL);}
-	|CHAR{ $$=mknode(yytext,NULL,NULL);}
-	|VOID{ $$=mknode(yytext,NULL,NULL);}
-	|INT{ $$=mknode(yytext,NULL,NULL);}
-	|STRING{ $$=mknode(yytext,NULL,NULL);}
-	|INTP{ $$=mknode(yytext,NULL,NULL);}
-	|CHARP{ $$=mknode(yytext,NULL,NULL);}
+		|CHAR{ $$=mknode(yytext,NULL,NULL);}
+		|VOID{ $$=mknode(yytext,NULL,NULL);}
+		|INT{ $$=mknode(yytext,NULL,NULL);}
+		|STRING{ $$=mknode(yytext,NULL,NULL);}
+		|INTP{ $$=mknode(yytext,NULL,NULL);}
+		|CHARP{ $$=mknode(yytext,NULL,NULL);}
 
 ident: 	IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
 
