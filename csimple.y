@@ -126,7 +126,7 @@ if(tree->right){ printtree(tree->right);}
 count--;
 }
 int yyerror(){ 
-		printf("error happend\n");
+		printf("error happend in line [%d] in token [%s]\n",counter,yytext);
 		return 0;
 	}
 
