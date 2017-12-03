@@ -28,7 +28,7 @@ lines:  line SEMICOLON nextline{ $$ = mknode(NULL,$1,$3);}
 
 nextline: lines | /*espilon*/  
 
-line:  	statement
+line:  	statement | expr
 
 statement: 	decleration_statement  /*statements as if \ if else \ loops \ functions*/
 		| decleration_and_set
@@ -36,15 +36,16 @@ statement: 	decleration_statement  /*statements as if \ if else \ loops \ functi
 		| loop_statement
 //		| function_statement
 
-loop_statement:		while_statement
-					| for_statement
+//loop_statement:		while_statement
+					//| for_statement
 
 
-expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
+expr:	  expr PLUS expr { $$ = mknode("+",$1,$3);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
 		| expr DIV expr{ $$=mknode("/",$1,$3);}	
-		|cond	
+		| ident SET expr{ $$=mknode("=",$1,$3);}
+		| cond	
 		| value
 		
 cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
@@ -55,18 +56,20 @@ cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
 		| expr LE expr{ $$=mknode("<=",$1,$3);}
 		| expr HEIGHT expr{ $$=mknode("^",$1,$3);}
 		| expr AND expr{ $$=mknode("&&",$1,$3);}
-		| expr SET expr{ $$=mknode("=",$1,$3);}
 		| expr OR expr{ $$=mknode("||",$1,$3);}
 		| wraped_cond
 		
 
 if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
 
-loop_statement: while_statement 
+loop_statement: while_statement
+				|do_while_statement
 
-while_statemnt: WHILE wraped_cond code_block_while { $$ = mknode("while",$2,$3);}
+do_while_statement: DO code_block_while while_statement { $$ = mknode("do",$2,$3);}
 
-code_block_while: LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("{}",$2,NULL);} 
+while_statement: WHILE wraped_cond code_block_while { $$ = mknode("while",$2,$3);}
+
+code_block_while: LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("{}",$2,NULL);} |/*epsilon*/
 
 wraped_cond: 	LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}|/*epsilon*/
 
@@ -122,7 +125,7 @@ static int count = 0;
 count++;
 if(tree->token) printf("%s\n",tree->token);
 for(int i = 0;i<count;i++){
-printf(" ");
+printf("-");
 }
 if(tree->left){ printtree(tree->left);}
 if(tree->right){ printtree(tree->right);}
