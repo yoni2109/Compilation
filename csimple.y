@@ -33,8 +33,12 @@ line:  	statement
 statement: 	decleration_statement  /*statements as if \ if else \ loops \ functions*/
 		| decleration_and_set
 		| if_statement
-//		| loop_statement
+		| loop_statement
 //		| function_statement
+
+loop_statement:		while_statement
+					| for_statement
+
 
 expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
