@@ -26,7 +26,7 @@ recived_program: lines {printtree($1);}
 
 
 
-lines:  line SEMICOLON nextline{ $$ = mknode(NULL,$1,mknode(";",$3,NULL));}
+lines:  line SEMICOLON nextline{ $$ = mknode(NULL,$1,$3);}
 
 nextline: lines | /*espilon*/  
 
@@ -35,7 +35,6 @@ line:  	statement
 statement: 	decleration_statement 
 		| decleration_and_set
 		| if_statement
-//		| else_statement
 //		| loop_statement
 //		| function_statement
 
@@ -43,7 +42,9 @@ expr:		expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
 		| expr DIV expr{ $$=mknode("/",$1,$3);}		
-		| expr EQ expr{ $$=mknode("==",$1,$3);}
+		| value
+		
+cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
 		| expr NE expr{ $$=mknode("!=",$1,$3);}
 		| expr GT expr{ $$=mknode(">",$1,$3);}
 		| expr GE expr{ $$=mknode(">=",$1,$3);}
@@ -53,30 +54,23 @@ expr:		expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr AND expr{ $$=mknode("&&",$1,$3);}
 		| expr SET expr{ $$=mknode("=",$1,$3);}
 		| expr OR expr{ $$=mknode("||",$1,$3);}
-		| value
+		|wraped_cond
 		
-		
 
-if_statement: 	IF wraped_expr code_block { $$=mknode("if",$2,$3);} 
+if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
 
-wraped_expr: 	LEFT_CIRC_BRAK exprinbrak{ $$=mknode("(",$2,NULL);}
+wraped_cond: 	LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}|/*epsilon*/
 
-exprinbrak:	expr RIGHT_CIRC_BRAK { $$=mknode(")",$1,NULL);}
+code_block: 	LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} | /*epsilon*/
 
-code_block: 	LEFT_BLOCK_BRAK block { $$=mknode("{",$2,NULL);} | /*epsilon*/
-
-block: 		lines RIGHT_BLOCK_BRAK else_statement{ $$=mknode("}",$1,$3);}
+block: 			lines
 
 else_statement: ELSE code_block{ $$=mknode("else",$2,NULL);} | /*epsilon*/
-
-//resume: 	COMMA decexpr { $$=mknode(yytext,$2,NULL);}| /*epsilon*/
-
-//decexpr: 	ident resume| set_statement resume  
 
 set_statement : ident SET value { $$=mknode("=",$1,$3);}
 
 value: 		NUM{ $$=mknode(yytext,NULL,NULL);} 
-		| ident
+			| ident
 
 decleration_statement: type ident { $$=mknode("decleration_statement",$1,$2);} 
 
@@ -84,12 +78,12 @@ decleration_and_set: type set_statement {$$ = mknode(NULL,$1,$2);}
 			
 
 type: 	BOOLEAN{ $$=mknode(yytext,NULL,NULL);}
-	|CHAR{ $$=mknode(yytext,NULL,NULL);}
-	|VOID{ $$=mknode(yytext,NULL,NULL);}
-	|INT{ $$=mknode(yytext,NULL,NULL);}
-	|STRING{ $$=mknode(yytext,NULL,NULL);}
-	|INTP{ $$=mknode(yytext,NULL,NULL);}
-	|CHARP{ $$=mknode(yytext,NULL,NULL);}
+		|CHAR{ $$=mknode(yytext,NULL,NULL);}
+		|VOID{ $$=mknode(yytext,NULL,NULL);}
+		|INT{ $$=mknode(yytext,NULL,NULL);}
+		|STRING{ $$=mknode(yytext,NULL,NULL);}
+		|INTP{ $$=mknode(yytext,NULL,NULL);}
+		|CHARP{ $$=mknode(yytext,NULL,NULL);}
 
 ident: 	IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
 
@@ -122,6 +116,7 @@ for(int i = 0;i<count;i++){
 printf(" ");
 }
 if(tree->left){ printtree(tree->left);}
+count--;
 if(tree->right){ printtree(tree->right);}
 count--;
 }
