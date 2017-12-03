@@ -39,7 +39,8 @@ statement: 	decleration_statement  /*statements as if \ if else \ loops \ functi
 expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
-		| expr DIV expr{ $$=mknode("/",$1,$3);}		
+		| expr DIV expr{ $$=mknode("/",$1,$3);}	
+		|cond	
 		| value
 		
 cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
@@ -52,14 +53,10 @@ cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
 		| expr AND expr{ $$=mknode("&&",$1,$3);}
 		| expr SET expr{ $$=mknode("=",$1,$3);}
 		| expr OR expr{ $$=mknode("||",$1,$3);}
-		|wraped_cond
+		| wraped_cond
 		
 
-<<<<<<< HEAD
 if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
-=======
-if_statement:	IF wraped_expr code_block { $$=mknode("if",$2,$3);} 
->>>>>>> b4316b69209d9aed4622dcbf3cd97c5af9b50106
 
 wraped_cond: 	LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}|/*epsilon*/
 
@@ -69,13 +66,6 @@ block: 			lines
 
 else_statement: ELSE code_block{ $$=mknode("else",$2,NULL);} | /*epsilon*/
 
-<<<<<<< HEAD
-=======
-//resume: 	COMMA decexpr { $$=mknode(yytext,$2,NULL);}| /*epsilon*/ 
-
-//decexpr: 	ident resume| set_statement resume  
-
->>>>>>> b4316b69209d9aed4622dcbf3cd97c5af9b50106
 set_statement : ident SET value { $$=mknode("=",$1,$3);}
 
 value: 		NUM{ $$=mknode(yytext,NULL,NULL);} 
