@@ -66,7 +66,7 @@ block: 			lines
 
 else_statement: ELSE code_block{ $$=mknode("else",$2,NULL);} | /*epsilon*/
 
-set_statement : ident SET value { $$=mknode("=",$1,$3);}
+set_statement : ident SET expr { $$=mknode("=",$1,$3);}
 
 value: 		NUM{ $$=mknode(yytext,NULL,NULL);} 
 			| ident
@@ -115,7 +115,6 @@ for(int i = 0;i<count;i++){
 printf(" ");
 }
 if(tree->left){ printtree(tree->left);}
-count--;
 if(tree->right){ printtree(tree->right);}
 count--;
 }

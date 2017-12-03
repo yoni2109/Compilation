@@ -1,4 +1,4 @@
 if((a==b)&&(a<b))
-{ int c = 5; int d = c;}
+{ int c = 5+6*y; int d = c;}
 else {int v=3;};
 
