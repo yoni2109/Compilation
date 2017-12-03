@@ -22,9 +22,7 @@ void printtree ( node *tree);
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
 %%
-recived_program: lines {printtree($1);}
-
-
+recived_program: lines {printtree($1);}  /*recived program is the first reduce terminal*/
 
 lines:  line SEMICOLON nextline{ $$ = mknode(NULL,$1,$3);}
 
@@ -32,13 +30,13 @@ nextline: lines | /*espilon*/
 
 line:  	statement
 
-statement: 	decleration_statement 
+statement: 	decleration_statement  /*statements as if \ if else \ loops \ functions*/
 		| decleration_and_set
 		| if_statement
 //		| loop_statement
 //		| function_statement
 
-expr:		expr PLUS expr { $$ = mknode("+",$1,$2);}
+expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
 		| expr DIV expr{ $$=mknode("/",$1,$3);}		
@@ -57,7 +55,11 @@ cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
 		|wraped_cond
 		
 
+<<<<<<< HEAD
 if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
+=======
+if_statement:	IF wraped_expr code_block { $$=mknode("if",$2,$3);} 
+>>>>>>> b4316b69209d9aed4622dcbf3cd97c5af9b50106
 
 wraped_cond: 	LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}|/*epsilon*/
 
@@ -67,6 +69,13 @@ block: 			lines
 
 else_statement: ELSE code_block{ $$=mknode("else",$2,NULL);} | /*epsilon*/
 
+<<<<<<< HEAD
+=======
+//resume: 	COMMA decexpr { $$=mknode(yytext,$2,NULL);}| /*epsilon*/ 
+
+//decexpr: 	ident resume| set_statement resume  
+
+>>>>>>> b4316b69209d9aed4622dcbf3cd97c5af9b50106
 set_statement : ident SET value { $$=mknode("=",$1,$3);}
 
 value: 		NUM{ $$=mknode(yytext,NULL,NULL);} 
@@ -121,7 +130,7 @@ if(tree->right){ printtree(tree->right);}
 count--;
 }
 int yyerror(){ 
-		printf("error happend\n");
+		printf("error happend in line [%d] in token [%s]\n",counter,yytext);
 		return 0;
 	}
 

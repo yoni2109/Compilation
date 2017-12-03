@@ -1,3 +1,6 @@
+%{
+int counter = 0;
+%}
 %%
 "boolean" return BOOLEAN;
 "char" return CHAR;
@@ -40,8 +43,8 @@
 "," return COMMA;
 "||" return OR;
 "|" return PIPE;
-
-[ \t\n\v\f]* ;
+\n counter++;
+[ \t\v\f]* ;
 . return yytext[0];
 
 %%
