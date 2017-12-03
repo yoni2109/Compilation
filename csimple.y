@@ -64,8 +64,19 @@ if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);}
 
 loop_statement: while_statement
 				|do_while_statement
+				|for_statement
 
 do_while_statement: DO code_block_while while_statement { $$ = mknode("do",$2,$3);}
+
+for_statement: FOR wraped_for code_block { $$ = mknode("for",$2,$3);}
+
+wraped_for: LEFT_CIRC_BRAK for_cond RIGHT_CIRC_BRAK { $$ = mknode("()",$2,NULL);}
+
+for_cond: first_expr sec_expr {$$ = mknode (NULL,$1,$2);}
+
+first_expr : expr SEMICOLON { $$=mknode (";",$1,NULL);}
+
+sec_expr : cond SEMICOLON expr { $$ = mknode (";",$1,$3);}
 
 while_statement: WHILE wraped_cond code_block_while { $$ = mknode("while",$2,$3);}
 
