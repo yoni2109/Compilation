@@ -36,6 +36,10 @@ statement: 	decleration_statement  /*statements as if \ if else \ loops \ functi
 		| loop_statement
 //		| function_statement
 
+loop_statement:		while_statement
+					| for_statement
+
+
 expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
 		| expr MINUS expr{ $$=mknode("-",$1,$3);}
 		| expr MULT expr{ $$=mknode("*",$1,$3);}
