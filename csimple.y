@@ -33,7 +33,7 @@ line:  	statement
 statement: 	decleration_statement  /*statements as if \ if else \ loops \ functions*/
 		| decleration_and_set
 		| if_statement
-//		| loop_statement
+		| loop_statement
 //		| function_statement
 
 expr:	  expr PLUS expr { $$ = mknode("+",$1,$2);}
@@ -57,6 +57,12 @@ cond: 	 expr EQ expr{ $$=mknode("==",$1,$3);}
 		
 
 if_statement: 	IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
+
+loop_statement: while_statement 
+
+while_statemnt: WHILE wraped_cond code_block_while { $$ = mknode("while",$2,$3);}
+
+code_block_while: LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("{}",$2,NULL);} 
 
 wraped_cond: 	LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}|/*epsilon*/
 
