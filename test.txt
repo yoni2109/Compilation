@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 int dosomething(int i);
 if((a==b)&&(a<b))
 {   integer = 5+6*y;  d = c;
@@ -13,3 +14,9 @@ do{
     a=x+b;
     c=d;
 }while(a>b);
+=======
+for(i=5;i<5;i+1)
+{
+    i=i+1;
+};
+>>>>>>> e1003854d353cbabcd4f6dfbb935ef8b0274c4ab
