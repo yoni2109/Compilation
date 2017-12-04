@@ -26,7 +26,7 @@ recived_program:
 			full_program {printtree($1);}  /*recived program is the first reduce terminal*/
 
 full_program:
-			functions lines { $$ = mknode(NULL,$1,$2);}
+			functions lines { $$ = mknode(NULL,$1,$2);} | lines
 
 functions:
 			function_decleration code_block_while { $$ = mknode(NULL,$1,$2);}
@@ -48,11 +48,21 @@ line:
 
 
 statement: 	
-			decleration_statement  /*statements as if \ if else \ loops \ functions*/
+			decleration_statement  /*statements as if \ if else \ loops \ functions*/	
+			//head_declartion
 			|decleration_and_set
 			| if_statement
 			| loop_statement
 		
+// head_declartion:
+// 			|decleration_statement resume
+// 			|decleration_and_set COMMA head_declartion { $$ = mknode("decleration_and_set",$2,$3)}
+// 			|ident head_declartion { $$ = mknode("ident",$2)}
+// 			|set_statement head_declartion { $$ = mknode("set statment",$2)}
+// 			|/*epsilone*/
+
+// resume :
+// 			COMMA head_declartion { $$ = mknode("decleration_statement",$2,$3)}
 
 function_decleration:
 			decleration_statement wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
@@ -139,7 +149,13 @@ value:
 			| ident
 
 decleration_statement: 
-			type ident { $$=mknode("decleration_statement",$1,$2);} 
+			type vars { $$=mknode("decleration_statement",$1,$2);} 
+
+vars:
+			ident vars{ $$ = mknode(NULL,$1,$2);}
+			|COMMA vars { $$ = mknode(",",$2,NULL);}
+			|/*epsilon*/
+
 
 decleration_and_set: 
 			type set_statement {$$ = mknode(NULL,$1,$2);}
