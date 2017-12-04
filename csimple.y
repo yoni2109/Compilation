@@ -23,25 +23,36 @@ void printtree ( node *tree);
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
 %%
 recived_program: 
-			lines {printtree($1);}  /*recived program is the first reduce terminal*/
+			full_program {printtree($1);}  /*recived program is the first reduce terminal*/
 
+full_program:
+			functions lines { $$ = mknode(NULL,$1,$2);}
+
+functions:
+			function_decleration code_block_while { $$ = mknode(NULL,$1,$2);}
+			
 lines:  
+			program
+			
+program:
 			line SEMICOLON nextline{ $$ = mknode(NULL,$1,$3);}
 
 nextline: 
-			lines 
+			program 
 			| /*espilon*/  
 
 line:  	
 			statement 
 			| expr
 
+
+
 statement: 	
 			decleration_statement  /*statements as if \ if else \ loops \ functions*/
-			| decleration_and_set
+			|decleration_and_set
 			| if_statement
 			| loop_statement
-			| function_decleration
+		
 
 function_decleration:
 			decleration_statement wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
