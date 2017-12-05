@@ -62,14 +62,9 @@ expr:
 			| expr MULT expr{ $$=mknode("*",$1,$3);}
 			| expr DIV expr{ $$=mknode("/",$1,$3);}	
 			| ident SET expr{ $$=mknode("=",$1,$3);}
-<<<<<<< HEAD
-			| value 
-=======
-			| cond	
 			| value
 			| REF ident  { $$=mknode("&",$2,NULL);} 
 
->>>>>>> be19b9a29b7d1989a622e3bd01072f0fa4f0896a
 		
 cond: 		 
 			  cond EQ cond{ $$=mknode("==",$1,$3);}
