@@ -22,48 +22,33 @@
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
 %%
-recived_program: 
-			full_program {printtree($1);}  /*recived program is the first reduce terminal*/
+
+recived_program: /*recived program is the first reduce terminal*/
+			full_program {printtree($1);}  
 
 full_program:
 			functions lines { $$ = mknode(NULL,$1,$2);} 
 			| lines
 
 functions:
-			function_decleration code_block_while { $$ = mknode(NULL,$1,$2);}
+			function_decleration code_block{ $$ = mknode(NULL,$1,$2);} //TODO: change code block
 			
 lines:  
 			program
 			
 program:
-			line SEMICOLON nextline{ $$ = mknode(NULL,$1,$3);}
-
-nextline: 
-			program 
-			| /*espilon*/  
+			line SEMICOLON program{ $$ = mknode(NULL,$1,$2);}
+			|/*epsilon*/
 
 line:  	
 			statement 
-			| expr
-
-
+			| expr 
 
 statement: 	
-			decleration_statement  /*statements as if \ if else \ loops \ functions*/	
-			//head_declartion
-			|decleration_and_set
+			decleration_statement   /*statements as if \ if else \ loops \ functions*/	
+			|decleration_and_set 
 			| if_statement
 			| loop_statement
-		
-// head_declartion:
-// 			|decleration_statement resume
-// 			|decleration_and_set COMMA head_declartion { $$ = mknode("decleration_and_set",$2,$3)}
-// 			|ident head_declartion { $$ = mknode("ident",$2)}
-// 			|set_statement head_declartion { $$ = mknode("set statment",$2)}
-// 			|/*epsilone*/
-
-// resume :
-// 			COMMA head_declartion { $$ = mknode("decleration_statement",$2,$3)}
 
 function_decleration:
 			decleration_statement wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
@@ -77,26 +62,24 @@ expr:
 			| expr MULT expr{ $$=mknode("*",$1,$3);}
 			| expr DIV expr{ $$=mknode("/",$1,$3);}	
 			| ident SET expr{ $$=mknode("=",$1,$3);}
-			| cond	
 			| value
 			| REF ident  { $$=mknode("&",$2,NULL);} 
 
 		
 cond: 		 
-			  expr EQ expr{ $$=mknode("==",$1,$3);}
-			| expr NE expr{ $$=mknode("!=",$1,$3);}
-			| expr GT expr{ $$=mknode(">",$1,$3);}
-			| expr GE expr{ $$=mknode(">=",$1,$3);}
-			| expr LT expr{ $$=mknode("<",$1,$3);}
-			| expr LE expr{ $$=mknode("<=",$1,$3);}
-			| expr HEIGHT expr{ $$=mknode("^",$1,$3);}
-			| expr AND expr{ $$=mknode("&&",$1,$3);}
-			| expr OR expr{ $$=mknode("||",$1,$3);}
+			  cond EQ cond{ $$=mknode("==",$1,$3);}
+			| cond NE cond{ $$=mknode("!=",$1,$3);}
+			| cond GT cond{ $$=mknode(">",$1,$3);}
+			| cond GE cond{ $$=mknode(">=",$1,$3);}
+			| cond LT cond{ $$=mknode("<",$1,$3);}
+			| cond LE cond{ $$=mknode("<=",$1,$3);}
+			| cond AND cond{ $$=mknode("&&",$1,$3);}
+			| cond OR cond{ $$=mknode("||",$1,$3);}
 			| wraped_cond
+			| value
 		
-
 if_statement: 	
-			IF wraped_cond code_block { $$=mknode("if",$2,$3);} 
+			IF wraped_cond code_block_if { $$=mknode("if",$2,$3);} 
 
 loop_statement: 
 				while_statement
@@ -104,10 +87,10 @@ loop_statement:
 				|for_statement
 
 do_while_statement: 
-			DO code_block_while while_statement { $$ = mknode("do",$2,$3);}
+			DO code_block while_statement { $$ = mknode("do",$2,$3);}
 
 while_statement: 
-			WHILE wraped_cond code_block_while { $$ = mknode("while",$2,$3);}
+			WHILE wraped_cond code_block{ $$ = mknode("while",$2,$3);}
 			
 for_statement: 
 			FOR wraped_for code_block { $$ = mknode("for",$2,$3);}
@@ -124,24 +107,25 @@ first_expr :
 sec_expr : 
 			cond SEMICOLON expr { $$ = mknode (";",$1,$3);}
 
-
-code_block_while: 
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("(BLOCK",$2,NULL);} 
-			|/*epsilon*/
-
 wraped_cond: 	
 			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
 			|/*epsilon*/
 
 code_block: 	
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK /*else_statement*/ { $$=mknode("{}",$2,NULL);} 
+			| /*epsilon*/
+
+code_block_if: 	
+			line 
+			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
 			| /*epsilon*/
 
 block: 			
 			lines
 
 else_statement: 
-			ELSE code_block{ $$=mknode("else",$2,NULL);} 
+			ELSE code_block{ $$=mknode("else",$2,NULL);}
+			|ELSE if_statement{ $$= mknode("else",$2,NULL);} 
 			| /*epsilon*/
 
 set_statement : 
@@ -217,14 +201,13 @@ node * mknode(char *token, node *left, node *right){
 }
 void printtree(node *tree){
 	static int count = 0;
-	count++;
 	if(tree->token) printf("%s\n",tree->token);
 	for(int i = 0;i<count;i++){
 	printf("-");
 	}
+	count++;
 	if(tree->left){ printtree(tree->left);}
 	if(tree->right){ printtree(tree->right);}
-	// printf("\n");
 	count--;
 }
 int yyerror(){ 
