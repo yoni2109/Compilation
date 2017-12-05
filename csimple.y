@@ -62,7 +62,14 @@ expr:
 			| expr MULT expr{ $$=mknode("*",$1,$3);}
 			| expr DIV expr{ $$=mknode("/",$1,$3);}	
 			| ident SET expr{ $$=mknode("=",$1,$3);}
+<<<<<<< HEAD
 			| value 
+=======
+			| cond	
+			| value
+			| REF ident  { $$=mknode("&",$2,NULL);} 
+
+>>>>>>> be19b9a29b7d1989a622e3bd01072f0fa4f0896a
 		
 cond: 		 
 			  cond EQ cond{ $$=mknode("==",$1,$3);}
@@ -128,10 +135,16 @@ else_statement:
 
 set_statement : 
 			ident SET expr { $$=mknode("=",$1,$3);}
+//			|ptr_ident SET expr { $$=mknode("=",$1,$3);}
+
+// ptr_ident:
+// 			REF { $$ = mknode ("&",NULL,NULL);}
+// 			|HEIGHT { $$ = mknode ("^",NULL,NULL);}
 
 value: 		
 			NUM{ $$=mknode(yytext,NULL,NULL);} 
 			| ident
+			
 
 decleration_statement: 
 			type vars { $$=mknode("decleration_statement",$1,$2);} 
@@ -140,8 +153,15 @@ vars:
 			ident vars{ $$ = mknode(NULL,$1,$2);}
 			|COMMA vars { $$ = mknode(",",$2,NULL);}
 			|/*epsilon*/
+			//|ident st_size vars { $$ = mknode("string",$1,$3);}
+			|ident_st vars { $$ = mknode(NULL,$1,$2);}
 
+ident_st:
+			ident st { $$ = mknode(NULL,$1,$2);}
 
+st:
+			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL);}	
+			
 decleration_and_set: 
 			type set_statement {$$ = mknode(NULL,$1,$2);}
 			
@@ -157,6 +177,11 @@ type:
 
 ident: 	
 			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
+
+// str:
+// 			STR1 { $$=mknode(yytext,NULL,NULL);};
+
+			
 
 
 %%
