@@ -1,15 +1,15 @@
 %{
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-typedef struct node
-	{ char *token;
-	  struct node *left;
-	  struct node *right;
-	} node;
-node *mknode ( char *token , node *left, node *right);
-void printtree ( node *tree);
-#define YYSTYPE struct node *
+	#include <stdio.h>
+	#include <string.h>
+	#include <stdlib.h>
+	typedef struct node
+		{ char *token;
+		  struct node *left;
+		  struct node *right;
+		} node;
+	node *mknode ( char *token , node *left, node *right);
+	void printtree ( node *tree);
+	#define YYSTYPE struct node *
 %}
 %start recived_program
 %token BOOLEAN,CHAR,VOID,INT,STRING,INTP,CHARP /*declerations*/
@@ -26,7 +26,12 @@ recived_program:
 			full_program {printtree($1);}  /*recived program is the first reduce terminal*/
 
 full_program:
+<<<<<<< HEAD
+			functions lines { $$ = mknode(NULL,$1,$2);} 
+			| lines
+=======
 			functions lines { $$ = mknode(NULL,$1,$2);} | lines
+>>>>>>> 579e1910cf69334308c9bcc0da659cf6b88fc7c7
 
 functions:
 			function_decleration code_block_while { $$ = mknode(NULL,$1,$2);}
@@ -125,7 +130,7 @@ sec_expr :
 
 
 code_block_while: 
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("{}",$2,NULL);} 
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK{ $$=mknode("(BLOCK",$2,NULL);} 
 			|/*epsilon*/
 
 wraped_cond: 	
@@ -223,6 +228,7 @@ void printtree(node *tree){
 	}
 	if(tree->left){ printtree(tree->left);}
 	if(tree->right){ printtree(tree->right);}
+	// printf("\n");
 	count--;
 }
 int yyerror(){ 
