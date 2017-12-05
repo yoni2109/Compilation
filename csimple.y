@@ -26,12 +26,8 @@ recived_program:
 			full_program {printtree($1);}  /*recived program is the first reduce terminal*/
 
 full_program:
-<<<<<<< HEAD
 			functions lines { $$ = mknode(NULL,$1,$2);} 
 			| lines
-=======
-			functions lines { $$ = mknode(NULL,$1,$2);} | lines
->>>>>>> 579e1910cf69334308c9bcc0da659cf6b88fc7c7
 
 functions:
 			function_decleration code_block_while { $$ = mknode(NULL,$1,$2);}

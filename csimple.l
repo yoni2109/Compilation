@@ -32,7 +32,7 @@ int counter = 0;
 "&" return REF;
 "^" return HEIGHT;
 [a-zA-Z]+ return IDENTIFIERE;
-
+[a-z]+ return STR;
 [0-9]+ return NUM;
 "(" return LEFT_CIRC_BRAK;
 ")" return RIGHT_CIRC_BRAK;
