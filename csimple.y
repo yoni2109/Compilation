@@ -19,6 +19,7 @@
 %token AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE/*operators*/
 %token IDENTIFIERE,NUM /*values*/
 %token SEMICOLON,COMMA
+%token STR,QUOTS
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
 %%
@@ -28,16 +29,16 @@ recived_program: /*recived program is the first reduce terminal*/
 
 full_program:
 			functions lines { $$ = mknode(NULL,$1,$2);} 
-			| lines
+			| lines 
 
 functions:
 			function_decleration code_block{ $$ = mknode(NULL,$1,$2);} //TODO: change code block
 			
 lines:  
-			program
+			program 
 			
 program:
-			line SEMICOLON program{ $$ = mknode(NULL,$1,$2);}
+			line SEMICOLON program{ $$ = mknode(NULL,$1,$3);}
 			|/*epsilon*/
 
 line:  	
@@ -64,6 +65,7 @@ expr:
 			| ident SET expr{ $$=mknode("=",$1,$3);}
 			| value
 			| REF ident  { $$=mknode("&",$2,NULL);} 
+			| str
 
 		
 cond: 		 
@@ -130,6 +132,7 @@ else_statement:
 
 set_statement : 
 			ident SET expr { $$=mknode("=",$1,$3);}
+			
 //			|ptr_ident SET expr { $$=mknode("=",$1,$3);}
 
 // ptr_ident:
@@ -172,6 +175,10 @@ type:
 
 ident: 	
 			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
+
+str:	
+			STR { $$=mknode(yytext,NULL,NULL);};
+
 
 // str:
 // 			STR1 { $$=mknode(yytext,NULL,NULL);};
