@@ -32,7 +32,6 @@ int counter = 0;
 "&" return REF;
 "^" return HEIGHT;
 [a-zA-Z]+ return IDENTIFIERE;
-\"(\\.|[^"\\])*\" return STR;
 [0-9]+ return NUM;
 "(" return LEFT_CIRC_BRAK;
 ")" return RIGHT_CIRC_BRAK;
@@ -44,10 +43,11 @@ int counter = 0;
 "," return COMMA;
 "||" return OR;
 "|" return PIPE;
+\"(\\.|[^"\\])*\" return STR;
 \" return QUOTS;
 
 \n counter++;
-[ \t\v\f]* ;
+[ \t] ;
 . return yytext[0];
 
 %%

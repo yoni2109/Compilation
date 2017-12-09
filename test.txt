@@ -1,14 +1,12 @@
 int a,v,b;
 string a[10];
-a="dasd";
+a = "dasd";
 if (a< 5)
-{
-    x=y+3;
-    y=x+2;
-}
+    x=5;
 else
-{
-    x=2*3+y;
-};
+    y=32;
+
+if(y>5){if(y<7)x=4;else{y=3;}}else y=9;
+if(y>8) x=2;
 
 

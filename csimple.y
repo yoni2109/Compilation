@@ -38,18 +38,18 @@ lines:
 			program 
 			
 program:
-			line SEMICOLON program{ $$ = mknode(NULL,$1,$3);}
+			line  program{ $$ = mknode(NULL,$1,$2);}
 			|/*epsilon*/
 
 line:  	
-			statement 
-			| expr 
+			statement  
+			| expr SEMICOLON
 
 statement: 	
-			decleration_statement   /*statements as if \ if else \ loops \ functions*/	
-			|decleration_and_set 
-			| if_statement
-			| loop_statement
+			decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
+			| if_statement 
+			| loop_statement 
+
 
 function_decleration:
 			decleration_statement wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
@@ -59,13 +59,14 @@ wraped_arguments:
 
 expr:		  
 			  expr PLUS expr { $$ = mknode("+",$1,$3);}
-			| expr MINUS expr{ $$=mknode("-",$1,$3);}
-			| expr MULT expr{ $$=mknode("*",$1,$3);}
-			| expr DIV expr{ $$=mknode("/",$1,$3);}	
-			| ident SET expr{ $$=mknode("=",$1,$3);}
+			| expr MINUS expr { $$=mknode("-",$1,$3);}
+			| expr MULT expr { $$=mknode("*",$1,$3);}
+			| expr DIV expr { $$=mknode("/",$1,$3);}	
+			| ident SET expr { $$=mknode("=",$1,$3);}
 			| value
 			| REF ident  { $$=mknode("&",$2,NULL);} 
 			| str
+			
 
 		
 cond: 		 
@@ -82,6 +83,22 @@ cond:
 		
 if_statement: 	
 			IF wraped_cond code_block_if { $$=mknode("if",$2,$3);} 
+code_block: 	
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK /*else_statement*/ { $$=mknode("{}",$2,NULL);} 
+			| /*epsilon*/
+
+code_block_if: 	
+			expr SEMICOLON else_statement { $$=mknode(NULL,$1,$3);}
+			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
+
+block: 			
+			lines
+
+else_statement: 
+			ELSE code_block_if{ $$=mknode("else",$2,NULL);}
+			|ELSE if_statement{ $$= mknode("else",$2,NULL);} 
+			| /*epsilon*/
+
 
 loop_statement: 
 				while_statement
@@ -113,31 +130,6 @@ wraped_cond:
 			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
 			|/*epsilon*/
 
-code_block: 	
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK /*else_statement*/ { $$=mknode("{}",$2,NULL);} 
-			| /*epsilon*/
-
-code_block_if: 	
-			line 
-			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
-			| /*epsilon*/
-
-block: 			
-			lines
-
-else_statement: 
-			ELSE code_block{ $$=mknode("else",$2,NULL);}
-			|ELSE if_statement{ $$= mknode("else",$2,NULL);} 
-			| /*epsilon*/
-
-set_statement : 
-			ident SET expr { $$=mknode("=",$1,$3);}
-			
-//			|ptr_ident SET expr { $$=mknode("=",$1,$3);}
-
-// ptr_ident:
-// 			REF { $$ = mknode ("&",NULL,NULL);}
-// 			|HEIGHT { $$ = mknode ("^",NULL,NULL);}
 
 value: 		
 			NUM{ $$=mknode(yytext,NULL,NULL);} 
@@ -150,19 +142,14 @@ decleration_statement:
 vars:
 			ident vars{ $$ = mknode(NULL,$1,$2);}
 			|COMMA vars { $$ = mknode(",",$2,NULL);}
+			|ident_string vars { $$ = mknode(NULL,$1,$2);}
 			|/*epsilon*/
-			//|ident st_size vars { $$ = mknode("string",$1,$3);}
-			|ident_st vars { $$ = mknode(NULL,$1,$2);}
 
-ident_st:
-			ident st { $$ = mknode(NULL,$1,$2);}
+ident_string:
+			ident string { $$ = mknode(NULL,$1,$2);}
 
-st:
-			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL);}	
-			
-decleration_and_set: 
-			type set_statement {$$ = mknode(NULL,$1,$2);}
-			
+string:
+			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL);}					
 
 type: 		
 			BOOLEAN{ $$=mknode(yytext,NULL,NULL);}
@@ -177,11 +164,8 @@ ident:
 			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
 
 str:	
-			STR { $$=mknode(yytext,NULL,NULL);};
+			STR   { $$=mknode(yytext,NULL,NULL);};
 
-
-// str:
-// 			STR1 { $$=mknode(yytext,NULL,NULL);};
 
 			
 
