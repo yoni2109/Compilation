@@ -132,8 +132,9 @@ loop_statement:
 				|for_statement
 
 do_while_statement: 
-			DO code_block while_statement { $$ = mknode("do",$2,$3);}
-
+			DO code_block while_statement_do_while { $$ = mknode("do",$2,$3);}
+while_statement_do_while:
+			WHILE wraped_cond{ $$ = mknode("while",$2,NULL);}
 while_statement: 
 			WHILE wraped_cond loop_code_block{ $$ = mknode("while",$2,$3);}
 			
