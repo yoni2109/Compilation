@@ -20,6 +20,8 @@
 %token IDENTIFIERE,NUM /*values*/
 %token SEMICOLON,COMMA,REF,DEREF
 %token STR,QUOTS,SINGLE_CHAR
+%token _TRUE , _FALSE
+%token OCTAL_NUM, HEX_NUM , BINARY_NUM
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,DEREF,OR,PIPE
 %%
@@ -154,6 +156,11 @@ wraped_cond:
 
 value: 		
 			NUM{ $$=mknode(yytext,NULL,NULL);} 
+			|_TRUE { $$=mknode(yytext,NULL,NULL);} 
+			|_FALSE { $$=mknode(yytext,NULL,NULL);} 
+			| OCTAL_NUM { $$=mknode(yytext,NULL,NULL);} 
+			| BINARY_NUM { $$=mknode(yytext,NULL,NULL);} 
+			| HEX_NUM { $$=mknode(yytext,NULL,NULL);} 
 			| ident
 			
 decleration_statement: 

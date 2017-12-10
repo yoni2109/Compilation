@@ -3,6 +3,8 @@ int counter = 0;
 %}
 %%
 "boolean" return BOOLEAN;
+"true" return _TRUE;
+"false" return _FALSE;
 "char" return CHAR;
 "void" return VOID;
 "int" return INT;
@@ -32,7 +34,10 @@ int counter = 0;
 "&" return REF;
 "^" return DEREF;
 [a-zA-Z][a-zA-Z0-9]* return IDENTIFIERE;
-[0-9]+ return NUM;
+0[0-7]* return OCTAL_NUM;
+(0x|0X)[0-9]*[A-E]* return HEX_NUM;
+[0-1]+b return BINARY_NUM; 
+0|[1-9][0-9]* return NUM;
 "(" return LEFT_CIRC_BRAK;
 ")" return RIGHT_CIRC_BRAK;
 "[" return LEFT_SQR_BRAK;
