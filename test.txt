@@ -1,1 +1,9 @@
-if(true) x=007;
+for(013;x>2;x+1)
+   x=0; 
+while(a>b) fdjsa = 2;
+if(j>k) {x=y;}
+else {y=j; }for(013;x>2;x+1)
+   x=0; 
+while(a>b) fda_jsa = 2;
+if(j>k) {x=y;}
+else {y=j; }

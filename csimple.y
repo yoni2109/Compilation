@@ -103,7 +103,9 @@ if_statement:
 code_block: 	
 			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL);} 
 			| /*epsilon*/
-
+loop_code_block: 	
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL);} 
+			|	expr SEMICOLON { $$ = $1;}
 function_code_block:
 			LEFT_BLOCK_BRAK block return_statement RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3);} 
 			| /*epsilon*/
@@ -133,10 +135,10 @@ do_while_statement:
 			DO code_block while_statement { $$ = mknode("do",$2,$3);}
 
 while_statement: 
-			WHILE wraped_cond code_block{ $$ = mknode("while",$2,$3);}
+			WHILE wraped_cond loop_code_block{ $$ = mknode("while",$2,$3);}
 			
 for_statement: 
-			FOR wraped_for code_block { $$ = mknode("for",$2,$3);}
+			FOR wraped_for loop_code_block { $$ = mknode("for",$2,$3);}
 
 wraped_for: 
 			LEFT_CIRC_BRAK for_cond RIGHT_CIRC_BRAK { $$ = mknode("()",$2,NULL);}
@@ -227,7 +229,7 @@ void printtree(node *tree){
 	}
 	if(tree->left){ printtree(tree->left);}
 	if(tree->right){ printtree(tree->right);}
-	count--;
+	count--;	
 }
 int yyerror(){ 
 		printf("error happend in line [%d] in token [%s]\n",counter,yytext);
