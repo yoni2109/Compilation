@@ -16,23 +16,23 @@
 %token IF,ELSE /*if\else*/
 %token WHILE,DO,FOR /*loops*/
 %token RETURN, _NULL /**/
-%token AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE/*operators*/
+%token AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,OR,PIPE/*operators*/
 %token IDENTIFIERE,NUM /*values*/
-%token SEMICOLON,COMMA
-%token STR,QUOTS
+%token SEMICOLON,COMMA,REF,DEREF
+%token STR,QUOTS,SINGLE_CHAR
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
-%left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,HEIGHT,OR,PIPE
+%left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,DEREF,OR,PIPE
 %%
 
 recived_program: /*recived program is the first reduce terminal*/
 			full_program {printtree($1);}  
 
 full_program:
-			functions lines { $$ = mknode(NULL,$1,$2);} 
+			functions full_program { $$ = mknode(NULL,$1,$2);} 
 			| lines 
 
 functions:
-			function_decleration code_block{ $$ = mknode(NULL,$1,$2);} //TODO: change code block
+			function_decleration function_code_block{ $$ = mknode(NULL,$1,$2);} 
 			
 lines:  
 			program 
@@ -50,25 +50,40 @@ statement:
 			| if_statement 
 			| loop_statement 
 
-
 function_decleration:
-			decleration_statement wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
+			type_ident_for_function wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
 
+type_ident_for_function:
+			type ident { $$=mknode(NULL,$1,$2);}/*used as funcction decleration and function args on decleration*/
+			
 wraped_arguments:
-			LEFT_CIRC_BRAK decleration_statement RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
+			LEFT_CIRC_BRAK func_args RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
 
+func_args:
+			type_ident_for_function func_args { $$=mknode(NULL,$1,$2);}
+			| COMMA func_args { $$=$2;}
+			|/*epsilon*/
 expr:		  
 			  expr PLUS expr { $$ = mknode("+",$1,$3);}
 			| expr MINUS expr { $$=mknode("-",$1,$3);}
 			| expr MULT expr { $$=mknode("*",$1,$3);}
-			| expr DIV expr { $$=mknode("/",$1,$3);}	
+			| expr DIV expr { $$=mknode("/",$1,$3);}
+			| PIPE expr PIPE { $$=mknode("||",$2,NULL);}	
 			| ident SET expr { $$=mknode("=",$1,$3);}
 			| value
+			| DEREF ident{ $$=mknode("^",$2,NULL);}
 			| REF ident  { $$=mknode("&",$2,NULL);} 
 			| str
-			
+			| single_char
+			| function_call
 
-		
+function_call:
+			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode(NULL,$1,$3);}
+expr_list:
+			expr expr_list { $$= mknode(NULL,$1,$2);}
+			| COMMA expr_list { $$=$2;}
+			|/*epsilon*/
+					
 cond: 		 
 			  cond EQ cond{ $$=mknode("==",$1,$3);}
 			| cond NE cond{ $$=mknode("!=",$1,$3);}
@@ -84,8 +99,16 @@ cond:
 if_statement: 	
 			IF wraped_cond code_block_if { $$=mknode("if",$2,$3);} 
 code_block: 	
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK /*else_statement*/ { $$=mknode("{}",$2,NULL);} 
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL);} 
 			| /*epsilon*/
+
+function_code_block:
+			LEFT_BLOCK_BRAK block return_statement RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3);} 
+			| /*epsilon*/
+
+return_statement:
+			RETURN expr SEMICOLON { $$ = mknode("return",$2,NULL);}
+			|RETURN SEMICOLON
 
 code_block_if: 	
 			expr SEMICOLON else_statement { $$=mknode(NULL,$1,$3);}
@@ -98,7 +121,6 @@ else_statement:
 			ELSE code_block_if{ $$=mknode("else",$2,NULL);}
 			|ELSE if_statement{ $$= mknode("else",$2,NULL);} 
 			| /*epsilon*/
-
 
 loop_statement: 
 				while_statement
@@ -130,12 +152,10 @@ wraped_cond:
 			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
 			|/*epsilon*/
 
-
 value: 		
 			NUM{ $$=mknode(yytext,NULL,NULL);} 
 			| ident
 			
-
 decleration_statement: 
 			type vars { $$=mknode("decleration_statement",$1,$2);} 
 
@@ -161,11 +181,12 @@ type:
 			|CHARP{ $$=mknode(yytext,NULL,NULL);}
 
 ident: 	
-			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);};
+			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);}
 
 str:	
-			STR   { $$=mknode(yytext,NULL,NULL);};
-
+			STR   { $$=mknode(yytext,NULL,NULL);}
+single_char:
+			SINGLE_CHAR { $$=mknode(yytext,NULL,NULL);};
 
 			
 
@@ -193,10 +214,10 @@ node * mknode(char *token, node *left, node *right){
 void printtree(node *tree){
 	static int count = 0;
 	if(tree->token) printf("%s\n",tree->token);
-	for(int i = 0;i<count;i++){
-	printf("-");
-	}
 	count++;
+	for(int i = 0;i<count;i++){
+		printf("-");
+	}
 	if(tree->left){ printtree(tree->left);}
 	if(tree->right){ printtree(tree->right);}
 	count--;

@@ -1,12 +1,1 @@
-int a,v,b;
-string a[10];
-a = "dasd";
-if (a< 5)
-    x=5;
-else
-    y=32;
-
-if(y>5){if(y<7)x=4;else{y=3;}}else y=9;
-if(y>8) x=2;
-
-
+string a[1000],b[500];
