@@ -115,7 +115,7 @@ return_statement:
 			|RETURN SEMICOLON
 
 code_block_if: 	
-			expr SEMICOLON else_statement { $$=mknode(NULL,$1,$3);}
+			expr SEMICOLON else_statement { $$=mknode("BLOCK",$1,$3);}
 			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
 
 block: 			
@@ -171,7 +171,7 @@ decleration_statement:
 
 vars:
 			ident vars{ $$ = mknode(NULL,$1,$2);}
-			|COMMA vars { $$ = mknode(",",$2,NULL);}
+			|COMMA vars { $$ =$2;}
 			|ident_string vars { $$ = mknode(NULL,$1,$2);}
 			|/*epsilon*/
 
@@ -223,14 +223,16 @@ node * mknode(char *token, node *left, node *right){
 }
 void printtree(node *tree){
 	static int count = 0;
-	if(tree->token) printf("%s\n",tree->token);
-	count++;
-	for(int i = 0;i<count;i++){
-		printf("-");
+	if(tree->token){ 
+		count++;
+		for(int i = 0;i<count;i++){
+			printf("-");
+		}
+		printf("%s\n",tree->token);
 	}
 	if(tree->left){ printtree(tree->left);}
 	if(tree->right){ printtree(tree->right);}
-	count--;	
+	if(tree->token)count--;	
 }
 int yyerror(){ 
 		printf("error happend in line [%d] in token [%s]\n",counter,yytext);

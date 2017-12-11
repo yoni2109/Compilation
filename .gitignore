@@ -2,3 +2,5 @@ lex.yy.c
 run1.out
 y.tab.c
 y.output
+*.out
+test2.txt
