@@ -27,17 +27,18 @@
 %%
 
 recived_program: /*recived program is the first reduce terminal*/
-			full_program {printtree($1);}  
+			full_program {semantica($1);}  
 
 full_program:
-			functions full_program { $$ = mknode(NULL,$1,$2);} 
-			| lines 
+			declerations full_program { $$ = mknode(NULL,$1,$2);} 
+			| program 
 
-functions:
-			function_decleration function_code_block{ $$ = mknode(NULL,$1,$2);} 
+declerations:
+			function_decleration function_code_block{ $$ = mknode("function",$1,$2);} 
+			| decleration_statement SEMICOLON
 			
-lines:  
-			program 
+//lines:  
+//			program 
 			
 program:
 			line  program{ $$ = mknode(NULL,$1,$2);}
@@ -96,7 +97,7 @@ cond:
 			| cond AND cond{ $$=mknode("&&",$1,$3);}
 			| cond OR cond{ $$=mknode("||",$1,$3);}
 			| wraped_cond
-			| value
+			| expr
 		
 if_statement: 	
 			IF wraped_cond code_block_if { $$=mknode("if",$2,$3);} 
@@ -119,7 +120,7 @@ code_block_if:
 			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
 
 block: 			
-			lines
+			full_program
 
 else_statement: 
 			ELSE code_block_if{ $$=mknode("else",$2,NULL);}
@@ -165,6 +166,7 @@ value:
 			| BINARY_NUM { $$=mknode(yytext,NULL,NULL);} 
 			| HEX_NUM { $$=mknode(yytext,NULL,NULL);} 
 			| ident
+			| _NULL { $$=mknode(yytext,NULL,NULL);}
 			
 decleration_statement: 
 			type vars { $$=mknode("decleration_statement",$1,$2);} 
@@ -203,40 +205,155 @@ single_char:
 
 %%
 #include "lex.yy.c"
-int main(){ 
+static int check_dec_flag = 0;
+int main()
+{ 
 		return yyparse();
-	}
-node * mknode(char *token, node *left, node *right){
+}
+node * mknode(char *token, node *left, node *right)
+{
 	node * newnode = (node*) malloc (sizeof(node));
 	if(token!=NULL)
 	{
-	char* newstr = (char*) malloc (sizeof(token)+1);
-	strcpy (newstr,token);
-	newnode->token=newstr;
+		char* newstr = (char*) malloc (sizeof(token)+1);
+		strcpy (newstr,token);
+		newnode->token=newstr;
 	}
-	else{ 
-	newnode->token = NULL;
+	else
+	{ 
+		newnode->token = NULL;
 	}
 	newnode->left = left;
 	newnode->right = right;
 	return newnode;
 }
-void printtree(node *tree){
+void printtree(node *tree)
+{
 	static int count = 0;
-	if(tree->token){ 
+	if(tree->token)
+	{ 
 		count++;
-		for(int i = 0;i<count;i++){
-			printf("-");
+		for(int i = 0;i<count;i++)
+		{
+			printf("\t");
 		}
 		printf("%s\n",tree->token);
 	}
-	if(tree->left){ printtree(tree->left);}
-	if(tree->right){ printtree(tree->right);}
-	if(tree->token)count--;	
+	if(tree->left)	
+	{
+		printtree(tree->left);
+	}
+	if(tree->right)	
+	{
+		printtree(tree->right);
+	}
+	if(tree->token)	
+		count--;	
 }
 int yyerror(){ 
 		printf("error happend in line [%d] in token [%s]\n",counter,yytext);
 		return 0;
 	}
+typedef struct linkedlist
+{
+	char *type;
+	char *ident;
+    struct linkedlist *left;
+    struct linkedlist *right;
+}linkedlist;
 
+typedef struct scope
+{
+	struct node *scope_head;
+    struct scope *inner_scope   ;
+    struct scope *outter_scope;
+	struct linkedlist *scops_list;
+}scope;
+
+
+void check_dec(node *dec_stat,linkedlist *current)
+{
+	if(current->ident&&strcmp(dec_stat->right->token,current->ident)==0)
+	{
+		printf("%s already defined\n",current->ident);
+		return;
+	}
+	else
+	{
+		if(current->right)
+		{
+			printf("move right to next list\n");
+			return check_dec(dec_stat,current->right);
+		}
+		else
+		{
+			if(current->ident)
+			{
+				current->right = (linkedlist*)malloc(sizeof(linkedlist));
+				current=current->right;
+			}	
+			current->ident = strdup(dec_stat->right->token);
+			current->type = strdup(dec_stat->left->token);
+			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			check_dec_flag = 1;
+			return;
+		}
+	}
+
+}
+scope* mk_scope(node* tree,scope *outterscope)
+{
+	scope *newscope = (scope*)malloc(sizeof(scope));
+	newscope->outter_scope = outterscope;
+	newscope->scope_head = tree;
+	newscope->scops_list = (linkedlist*)malloc(sizeof(linkedlist));
+	newscope->scops_list->ident=NULL;
+	newscope->scops_list->type=NULL;
+	return newscope;
+}
+void check_dec_idents(node* )
+void samentise_(scope* current_scope)
+{
+	scope *innerscope;
+	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
+	{
+		//dont forget to take func args
+		//dont forget return statement
+		current_scope->scope_head = current_scope->scope_head->left; 
+
+	}
+	if( current_scope->scope_head 
+		&& current_scope->scope_head->left 
+		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
+	{
+		
+		check_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
+		if(check_dec_flag == 1)
+		{
+			check_dec_flag=0;
+			innerscope = mk_scope(current_scope->scope_head->left->right,current_scope);
+			samentise_(innerscope);
+		}
+		if(current_scope->scope_head->right)
+		{
+			current_scope->scope_head = current_scope->scope_head->right;
+			samentise_(current_scope);
+		}
+	}
+	if(current_scope->scope_head && current_scope->scope_head->left && srtcmp(current_scope->scope_head->left->token,"decleration_statement"))
+	{
+		//left son is a type
+		// right son is identifiers or a single identifier
+		 check_dec_idents(current_scope);
+
+	}
+}
+
+void semantica(node *tree){
+    node *head = tree;
+	printtree(tree);
+	scope *globalscope = mk_scope(tree,NULL);
+	samentise_(globalscope);
+
+}
 

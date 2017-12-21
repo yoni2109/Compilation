@@ -1,27 +1,16 @@
-int test(int a, char b, string c){
-    int a,b,c;
-    char a[100],c[200];
-    intp g_12;
-    g_12 = ^a;
-    g_12 = &a;
-    for(a=1;a<x;a=a+1){
-        if (a<b){
-            if (true)
-                x=c;
-        
+int functionfortets(){
+    return;
+}
+int functionfortets123(){
+    int func(){
+        int func()
+        {
+            return;
         }
-        else{
-            while(c>0){
-                do{x=5;}while(c<9)
-            }
+        int func1(){
+            return;
         }
+        return;
     }
-    a = "abcdf";
-    b= 'A';
-    c= 0x123E;
-    d=00001234567;
-    /*some comments*/
-    // one line comment
-
     return;
 }
