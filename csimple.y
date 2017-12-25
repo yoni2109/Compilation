@@ -49,8 +49,8 @@ line:
 			| expr SEMICOLON
 
 statement: 	
-			decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
-			| if_statement 
+			//decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
+			if_statement 
 			| loop_statement 
 
 function_decleration:
@@ -173,7 +173,7 @@ decleration_statement:
 
 vars:
 			ident vars{ $$ = mknode(NULL,$1,$2);}
-			|COMMA vars { $$ =$2;}
+			|COMMA vars { $$ =mknode(NULL,NULL,$2);}
 			|ident_string vars { $$ = mknode(NULL,$1,$2);}
 			|/*epsilon*/
 
@@ -271,7 +271,7 @@ typedef struct scope
 }scope;
 
 
-void check_dec(node *dec_stat,linkedlist *current)
+void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
 	if(current->ident&&strcmp(dec_stat->right->token,current->ident)==0)
 	{
@@ -283,7 +283,7 @@ void check_dec(node *dec_stat,linkedlist *current)
 		if(current->right)
 		{
 			printf("move right to next list\n");
-			return check_dec(dec_stat,current->right);
+			return cehck_func_dec(dec_stat,current->right);
 		}
 		else
 		{
@@ -311,9 +311,60 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->scops_list->type=NULL;
 	return newscope;
 }
-void check_dec_idents(node* )
+void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
+{
+		if(current->ident&&strcmp(dec_ident,current->ident)==0)
+	{
+		printf("%s already defined\n",current->ident);
+		return;
+	}
+	else
+	{
+		if(current->right)
+		{
+			//printf("move right to next list\n");
+			return check_ident_decleration(dec_ident,type,current->right);
+		}
+		else
+		{
+			if(current->ident)
+			{
+				current->right = (linkedlist*)malloc(sizeof(linkedlist));
+				current=current->right;
+			}	
+			current->ident = strdup(dec_ident);
+			current->type = strdup(type);
+			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			check_dec_flag = 1;
+			return;
+		}
+	}
+
+}
+void check_dec_idents(scope* current_scope)
+{
+	current_scope->scope_head = current_scope->scope_head->left;
+	char* type = strdup(current_scope->scope_head->left->token);
+	char* identifier;
+	while(current_scope->scope_head->right)
+	{
+		current_scope->scope_head =current_scope->scope_head->right;
+		identifier =NULL;
+		identifier = strdup(current_scope->scope_head->left->token);
+		check_ident_decleration(identifier,type,current_scope->scops_list);
+		if(check_dec_flag==1)
+		{
+			check_dec_flag=0;	
+		}
+		if(current_scope->scope_head->right){
+			current_scope->scope_head=current_scope->scope_head->right;
+		}
+
+	}
+}
 void samentise_(scope* current_scope)
 {
+	node* savestate;
 	scope *innerscope;
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
 	{
@@ -327,7 +378,7 @@ void samentise_(scope* current_scope)
 		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
 	{
 		
-		check_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
+		cehck_func_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
 		if(check_dec_flag == 1)
 		{
 			check_dec_flag=0;
@@ -340,12 +391,26 @@ void samentise_(scope* current_scope)
 			samentise_(current_scope);
 		}
 	}
-	if(current_scope->scope_head && current_scope->scope_head->left && srtcmp(current_scope->scope_head->left->token,"decleration_statement"))
+	if(current_scope->scope_head 
+	&& current_scope->scope_head->left 
+	&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
 	{
+		
+		savestate = current_scope->scope_head;
+		
+		//printf("got here 1\n%s\n",current_scope->scope_head->left->token);
 		//left son is a type
 		// right son is identifiers or a single identifier
-		 check_dec_idents(current_scope);
+		check_dec_idents(current_scope);
+		
+		 current_scope->scope_head = savestate;
+		
 
+	}
+	if(current_scope->scope_head->right)
+	{
+		current_scope->scope_head = current_scope->scope_head->right;
+		samentise_(current_scope);
 	}
 }
 

@@ -1,16 +1,7 @@
-int functionfortets(){
-    return;
-}
+
 int functionfortets123(){
-    int func(){
-        int func()
-        {
-            return;
-        }
-        int func1(){
-            return;
-        }
-        return;
-    }
+    int a;
     return;
 }
+int main;
+int bax;
