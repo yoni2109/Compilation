@@ -1,7 +1,19 @@
-
 int functionfortets123(){
     int a;
     return;
 }
-int main;
+int foo(){
+    return;
+}
+int tfoo(){
+    return;
+}
+int functionfortets(){
+    
+    return;
+}
+int tfoo(){
+    return;
+}
+
 int bax;

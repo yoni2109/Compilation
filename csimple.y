@@ -289,6 +289,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 		{
 			if(current->ident)
 			{
+				//printf("****\n");
 				current->right = (linkedlist*)malloc(sizeof(linkedlist));
 				current=current->right;
 			}	
@@ -322,7 +323,6 @@ void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
 	{
 		if(current->right)
 		{
-			//printf("move right to next list\n");
 			return check_ident_decleration(dec_ident,type,current->right);
 		}
 		else
@@ -362,7 +362,7 @@ void check_dec_idents(scope* current_scope)
 
 	}
 }
-void samentise_(scope* current_scope)
+void samentise_(scope* current_scope) 
 {
 	node* savestate;
 	scope *innerscope;
@@ -371,54 +371,47 @@ void samentise_(scope* current_scope)
 		//dont forget to take func args
 		//dont forget return statement
 		current_scope->scope_head = current_scope->scope_head->left; 
-
 	}
 	if( current_scope->scope_head 
 		&& current_scope->scope_head->left 
 		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
 	{
-		
 		cehck_func_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
 		if(check_dec_flag == 1)
 		{
 			check_dec_flag=0;
 			innerscope = mk_scope(current_scope->scope_head->left->right,current_scope);
 			samentise_(innerscope);
+			//printf("cehck func dec \n");
 		}
 		if(current_scope->scope_head->right)
 		{
 			current_scope->scope_head = current_scope->scope_head->right;
-			samentise_(current_scope);
+			return samentise_(current_scope);
 		}
 	}
 	if(current_scope->scope_head 
 	&& current_scope->scope_head->left 
 	&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
 	{
-		
 		savestate = current_scope->scope_head;
-		
-		//printf("got here 1\n%s\n",current_scope->scope_head->left->token);
 		//left son is a type
 		// right son is identifiers or a single identifier
 		check_dec_idents(current_scope);
-		
-		 current_scope->scope_head = savestate;
-		
-
+		current_scope->scope_head = savestate;
 	}
-	if(current_scope->scope_head->right)
+	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{
 		current_scope->scope_head = current_scope->scope_head->right;
-		samentise_(current_scope);
+		return samentise_(current_scope);
 	}
 }
 
-void semantica(node *tree){
+void semantica(node *tree){//recivce a tree from lexical analizer
     node *head = tree;
 	printtree(tree);
-	scope *globalscope = mk_scope(tree,NULL);
-	samentise_(globalscope);
+	scope *globalscope = mk_scope(tree,NULL); // firsr scope is the global scope 
+	samentise_(globalscope); 
 
 }
 
