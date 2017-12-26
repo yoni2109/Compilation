@@ -4,12 +4,12 @@ int functionfortets123(){
 }
 int functionfortets13(){
     int a;
+    void main(){
+        return;
+    }
     return;
 }
-    void main(){
-    return;
-}
-    void main(){
+void main(){
     return;
 }
 int bax;

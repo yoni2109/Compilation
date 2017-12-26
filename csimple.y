@@ -205,6 +205,7 @@ single_char:
 
 %%
 #include "lex.yy.c"
+static int flag_main=0;//flag for main
 static int check_dec_flag = 0;
 int main()
 { 
@@ -265,9 +266,11 @@ typedef struct linkedlist
 typedef struct scope
 {
 	struct node *scope_head;//scopes rellevant tree root
-    struct scope *inner_scope;// not used yet
+    struct scope **inner_scopes;// not used yet
+	int inner_scopes_count;// counts the number of inner scopes
     struct scope *outter_scope;// will hold poiter to currents "global" scope
 	struct linkedlist *scops_list;//type ident list
+}scope;
 
 scope* mk_scope(node* tree,scope *outterscope)
 {
@@ -277,16 +280,17 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->scops_list = (linkedlist*)malloc(sizeof(linkedlist));
 	newscope->scops_list->ident=NULL;
 	newscope->scops_list->type=NULL;
+	newscope->inner_scopes_count=0;
 	return newscope;
 }
 
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
-	int static flag_main=0;//flag for main
+	
 	if( (current->ident&&strcmp(dec_stat->right->token,current->ident)==0)//we check also if there is main and the ident is main
-	|| ( (current->ident&&strcmp("main",current->ident)==0) && (flag_main==1)))//we also can copy this if only for the main
+	   ||((current->ident&&strcmp("main",dec_stat->right->token)==0) && (flag_main==1)))//we also can copy this if only for the main
 	{
-		printf("%s already defined\n",current->ident);
+		printf("%s already defined\n",dec_stat->right->token);
 		return;
 	}
 	
@@ -313,7 +317,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 			current->type = strdup(dec_stat->left->token);
 
 			if(current->ident&&strcmp(current->ident,"main")==0) flag_main=1;//if the ident is main we mark the flag
-			//printf("check if main %s\n",current->ident);
+			//printf("check if main %s %d\n",current->ident,flag_main);
 
 			printf("success declaration on [%s %s] \n",current->type,current->ident);
 			//printf("flag main %d\n",flag_main);
@@ -380,20 +384,29 @@ void samentise_(scope* current_scope)
 	scope *innerscope;
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
 	{
-		//dont forget to take func args
-		//dont forget return statement
+		//TODO:  func args
+		//TODO:  return statement
 		current_scope->scope_head = current_scope->scope_head->left; 
 	}
 	if( current_scope->scope_head 
 		&& current_scope->scope_head->left 
 		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
 	{
-		cehck_func_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
+		//cehck_func_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
 		if(check_dec_flag == 1)
 		{
 			check_dec_flag=0;
-			innerscope = mk_scope(current_scope->scope_head->left->right,current_scope);
-			samentise_(innerscope);
+			if(current_scope->inner_scopes_count==0){
+				current_scope->inner_scopes = (scope**)malloc(sizeof(scope*)+1);
+				current_scope->inner_scopes_count++;
+			}
+			else if(current_scope->inner_scopes_count){
+				current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,current_scope->inner_scopes_count+1);
+				current_scope->inner_scopes_count++;
+			}
+			current_scope->inner_scopes[current_scope->inner_scopes_count-1] = mk_scope(current_scope->scope_head->left->right,current_scope);
+			
+			samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
 			//printf("cehck func dec \n");
 		}
 		if(current_scope->scope_head->right)
@@ -408,7 +421,7 @@ void samentise_(scope* current_scope)
 	{
 		savestate = current_scope->scope_head;
 		//left son is a type
-		// right son is identifiers or a single identifier
+		//right son is identifiers or a single identifier
 		check_dec_idents(current_scope);
 		current_scope->scope_head = savestate;
 	}
