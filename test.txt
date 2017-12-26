@@ -2,18 +2,14 @@ int functionfortets123(){
     int a;
     return;
 }
-int foo(){
+int functionfortets13(){
+    int a;
     return;
 }
-int tfoo(){
+    void main(){
     return;
 }
-int functionfortets(){
-    
+    void main(){
     return;
 }
-int tfoo(){
-    return;
-}
-
 int bax;

@@ -265,19 +265,22 @@ typedef struct linkedlist
 typedef struct scope
 {
 	struct node *scope_head;
-    struct scope *inner_scope   ;
+    struct scope *inner_scope;
     struct scope *outter_scope;
-	struct linkedlist *scops_list;
+	struct linkedlist *scops_list;//it scops list or type and ident list??
 }scope;
 
 
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
-	if(current->ident&&strcmp(dec_stat->right->token,current->ident)==0)
+	int static flag_main=0;//flag for main
+	if( (current->ident&&strcmp(dec_stat->right->token,current->ident)==0)//we check also if there is main and the ident is main
+	|| ( (current->ident&&strcmp("main",current->ident)==0) && (flag_main==1)))//we also can copy this if only for the main
 	{
 		printf("%s already defined\n",current->ident);
 		return;
 	}
+	
 	else
 	{
 		if(current->right)
@@ -285,22 +288,31 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 			printf("move right to next list\n");
 			return cehck_func_dec(dec_stat,current->right);
 		}
+		
 		else
 		{
+			
 			if(current->ident)
 			{
 				//printf("****\n");
 				current->right = (linkedlist*)malloc(sizeof(linkedlist));
 				current=current->right;
-			}	
+			}
+			
+
 			current->ident = strdup(dec_stat->right->token);
 			current->type = strdup(dec_stat->left->token);
+
+			if(current->ident&&strcmp(current->ident,"main")==0) flag_main=1;//if the ident is main we mark the flag
+			//printf("check if main %s\n",current->ident);
+
 			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			//printf("flag main %d\n",flag_main);
 			check_dec_flag = 1;
 			return;
 		}
 	}
-
+	
 }
 scope* mk_scope(node* tree,scope *outterscope)
 {
