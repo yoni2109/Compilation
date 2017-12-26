@@ -6,8 +6,9 @@
 		{ char *token;
 		  struct node *left;
 		  struct node *right;
+		  int row;
 		} node;
-	node *mknode ( char *token , node *left, node *right);
+	node *mknode ( char *token , node *left, node *right,int row);
 	void printtree ( node *tree);
 	#define YYSTYPE struct node *
 %}
@@ -30,18 +31,18 @@ recived_program: /*recived program is the first reduce terminal*/
 			full_program {semantica($1);}  
 
 full_program:
-			declerations full_program { $$ = mknode(NULL,$1,$2);} 
+			declerations full_program { $$ = mknode(NULL,$1,$2,counter);} 
 			| program 
 
 declerations:
-			function_decleration function_code_block{ $$ = mknode("function",$1,$2);} 
+			function_decleration function_code_block{ $$ = mknode("function",$1,$2,counter);} 
 			| decleration_statement SEMICOLON
 			
 //lines:  
 //			program 
 			
 program:
-			line  program{ $$ = mknode(NULL,$1,$2);}
+			line  program{ $$ = mknode(NULL,$1,$2,counter);}
 			|/*epsilon*/
 
 line:  	
@@ -54,77 +55,77 @@ statement:
 			| loop_statement 
 
 function_decleration:
-			type_ident_for_function wraped_arguments{ $$ = mknode("function decleration",$1,$2);}
+			type_ident_for_function wraped_arguments{ $$ = mknode("function decleration",$1,$2,counter);}
 
 type_ident_for_function:
-			type ident { $$=mknode(NULL,$1,$2);}/*used as funcction decleration and function args on decleration*/
+			type ident { $$=mknode(NULL,$1,$2,counter);}/*used as funcction decleration and function args on decleration*/
 			
 wraped_arguments:
-			LEFT_CIRC_BRAK func_args RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
+			LEFT_CIRC_BRAK func_args RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL,counter);}
 
 func_args:
-			type_ident_for_function func_args { $$=mknode(NULL,$1,$2);}
+			type_ident_for_function func_args { $$=mknode(NULL,$1,$2,counter);}
 			| COMMA func_args { $$=$2;}
 			|/*epsilon*/
 expr:		  
-			  expr PLUS expr { $$ = mknode("+",$1,$3);}
-			| expr MINUS expr { $$=mknode("-",$1,$3);}
-			| expr MULT expr { $$=mknode("*",$1,$3);}
-			| expr DIV expr { $$=mknode("/",$1,$3);}
-			| PIPE expr PIPE { $$=mknode("||",$2,NULL);}	
-			| ident SET expr { $$=mknode("=",$1,$3);}
+			  expr PLUS expr { $$ = mknode("+",$1,$3,counter);}
+			| expr MINUS expr { $$=mknode("-",$1,$3,counter);}
+			| expr MULT expr { $$=mknode("*",$1,$3,counter);}
+			| expr DIV expr { $$=mknode("/",$1,$3,counter);}
+			| PIPE expr PIPE { $$=mknode("||",$2,NULL,counter);}	
+			| ident SET expr { $$=mknode("=",$1,$3,counter);}
 			| value
-			| DEREF ident{ $$=mknode("^",$2,NULL);}
-			| REF ident  { $$=mknode("&",$2,NULL);} 
+			| DEREF ident{ $$=mknode("^",$2,NULL,counter);}
+			| REF ident  { $$=mknode("&",$2,NULL,counter);} 
 			| str
 			| single_char
 			| function_call
 
 function_call:
-			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode(NULL,$1,$3);}
+			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode(NULL,$1,$3,counter);}
 expr_list:
-			expr expr_list { $$= mknode(NULL,$1,$2);}
+			expr expr_list { $$= mknode(NULL,$1,$2,counter);}
 			| COMMA expr_list { $$=$2;}
 			|/*epsilon*/
 					
 cond: 		 
-			  cond EQ cond{ $$=mknode("==",$1,$3);}
-			| cond NE cond{ $$=mknode("!=",$1,$3);}
-			| cond GT cond{ $$=mknode(">",$1,$3);}
-			| cond GE cond{ $$=mknode(">=",$1,$3);}
-			| cond LT cond{ $$=mknode("<",$1,$3);}
-			| cond LE cond{ $$=mknode("<=",$1,$3);}
-			| cond AND cond{ $$=mknode("&&",$1,$3);}
-			| cond OR cond{ $$=mknode("||",$1,$3);}
+			  cond EQ cond{ $$=mknode("==",$1,$3,counter);}
+			| cond NE cond{ $$=mknode("!=",$1,$3,counter);}
+			| cond GT cond{ $$=mknode(">",$1,$3,counter);}
+			| cond GE cond{ $$=mknode(">=",$1,$3,counter);}
+			| cond LT cond{ $$=mknode("<",$1,$3,counter);}
+			| cond LE cond{ $$=mknode("<=",$1,$3,counter);}
+			| cond AND cond{ $$=mknode("&&",$1,$3,counter);}
+			| cond OR cond{ $$=mknode("||",$1,$3,counter);}
 			| wraped_cond
 			| expr
 		
 if_statement: 	
-			IF wraped_cond code_block_if { $$=mknode("if",$2,$3);} 
+			IF wraped_cond code_block_if { $$=mknode("if",$2,$3,counter);} 
 code_block: 	
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL);} 
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL,counter);} 
 			| /*epsilon*/
 loop_code_block: 	
-			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL);} 
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL,counter);} 
 			|	expr SEMICOLON { $$ = $1;}
 function_code_block:
-			LEFT_BLOCK_BRAK block return_statement RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3);} 
+			LEFT_BLOCK_BRAK block return_statement RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3,counter);} 
 			| /*epsilon*/
 
 return_statement:
-			RETURN expr SEMICOLON { $$ = mknode("return",$2,NULL);}
+			RETURN expr SEMICOLON { $$ = mknode("return",$2,NULL,counter);}
 			|RETURN SEMICOLON
 
 code_block_if: 	
-			expr SEMICOLON else_statement { $$=mknode("BLOCK",$1,$3);}
-			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4);} 
+			expr SEMICOLON else_statement { $$=mknode("BLOCK",$1,$3,counter);}
+			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4,counter);} 
 
 block: 			
 			full_program
 
 else_statement: 
-			ELSE code_block_if{ $$=mknode("else",$2,NULL);}
-			|ELSE if_statement{ $$= mknode("else",$2,NULL);} 
+			ELSE code_block_if{ $$=mknode("else",$2,NULL,counter);}
+			|ELSE if_statement{ $$= mknode("else",$2,NULL,counter);} 
 			| /*epsilon*/
 
 loop_statement: 
@@ -133,72 +134,72 @@ loop_statement:
 				|for_statement
 
 do_while_statement: 
-			DO code_block while_statement_do_while { $$ = mknode("do",$2,$3);}
+			DO code_block while_statement_do_while { $$ = mknode("do",$2,$3,counter);}
 while_statement_do_while:
-			WHILE wraped_cond{ $$ = mknode("while",$2,NULL);}
+			WHILE wraped_cond{ $$ = mknode("while",$2,NULL,counter);}
 while_statement: 
-			WHILE wraped_cond loop_code_block{ $$ = mknode("while",$2,$3);}
+			WHILE wraped_cond loop_code_block{ $$ = mknode("while",$2,$3,counter);}
 			
 for_statement: 
-			FOR wraped_for loop_code_block { $$ = mknode("for",$2,$3);}
+			FOR wraped_for loop_code_block { $$ = mknode("for",$2,$3,counter);}
 
 wraped_for: 
-			LEFT_CIRC_BRAK for_cond RIGHT_CIRC_BRAK { $$ = mknode("()",$2,NULL);}
+			LEFT_CIRC_BRAK for_cond RIGHT_CIRC_BRAK { $$ = mknode("()",$2,NULL,counter);}
 
 for_cond: 
-			first_expr sec_expr {$$ = mknode (NULL,$1,$2);}
+			first_expr sec_expr {$$ = mknode (NULL,$1,$2,counter);}
 
 first_expr : 
-			expr SEMICOLON { $$=mknode (";",$1,NULL);}
+			expr SEMICOLON { $$=mknode (";",$1,NULL,counter);}
 
 sec_expr : 
-			cond SEMICOLON expr { $$ = mknode (";",$1,$3);}
+			cond SEMICOLON expr { $$ = mknode (";",$1,$3,counter);}
 
 wraped_cond: 	
-			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL);}
+			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL,counter);}
 			|/*epsilon*/
 
 value: 		
-			NUM{ $$=mknode(yytext,NULL,NULL);} 
-			|_TRUE { $$=mknode(yytext,NULL,NULL);} 
-			|_FALSE { $$=mknode(yytext,NULL,NULL);} 
-			| OCTAL_NUM { $$=mknode(yytext,NULL,NULL);} 
-			| BINARY_NUM { $$=mknode(yytext,NULL,NULL);} 
-			| HEX_NUM { $$=mknode(yytext,NULL,NULL);} 
+			NUM{ $$=mknode(yytext,NULL,NULL,counter);} 
+			|_TRUE { $$=mknode(yytext,NULL,NULL,counter);} 
+			|_FALSE { $$=mknode(yytext,NULL,NULL,counter);} 
+			| OCTAL_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
+			| BINARY_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
+			| HEX_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
 			| ident
-			| _NULL { $$=mknode(yytext,NULL,NULL);}
+			| _NULL { $$=mknode(yytext,NULL,NULL,counter);}
 			
 decleration_statement: 
-			type vars { $$=mknode("decleration_statement",$1,$2);} 
+			type vars { $$=mknode("decleration_statement",$1,$2,counter);} 
 
 vars:
-			ident vars{ $$ = mknode(NULL,$1,$2);}
-			|COMMA vars { $$ =mknode(NULL,NULL,$2);}
-			|ident_string vars { $$ = mknode(NULL,$1,$2);}
+			ident vars{ $$ = mknode(NULL,$1,$2,counter);}
+			|COMMA vars { $$ =mknode(NULL,NULL,$2,counter);}
+			|ident_string vars { $$ = mknode(NULL,$1,$2,counter);}
 			|/*epsilon*/
 
 ident_string:
-			ident string { $$ = mknode(NULL,$1,$2);}
+			ident string { $$ = mknode(NULL,$1,$2,counter);}
 
 string:
-			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL);}					
+			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL,counter);}					
 
 type: 		
-			BOOLEAN{ $$=mknode(yytext,NULL,NULL);}
-			|CHAR{ $$=mknode(yytext,NULL,NULL);}
-			|VOID{ $$=mknode(yytext,NULL,NULL);}
-			|INT{ $$=mknode(yytext,NULL,NULL);}
-			|STRING{ $$=mknode(yytext,NULL,NULL);}
-			|INTP{ $$=mknode(yytext,NULL,NULL);}
-			|CHARP{ $$=mknode(yytext,NULL,NULL);}
+			BOOLEAN{ $$=mknode(yytext,NULL,NULL,counter);}
+			|CHAR{ $$=mknode(yytext,NULL,NULL,counter);}
+			|VOID{ $$=mknode(yytext,NULL,NULL,counter);}
+			|INT{ $$=mknode(yytext,NULL,NULL,counter);}
+			|STRING{ $$=mknode(yytext,NULL,NULL,counter);}
+			|INTP{ $$=mknode(yytext,NULL,NULL,counter);}
+			|CHARP{ $$=mknode(yytext,NULL,NULL,counter);}
 
 ident: 	
-			IDENTIFIERE { $$=mknode(yytext,NULL,NULL);}
+			IDENTIFIERE { $$=mknode(yytext,NULL,NULL,counter);}
 
 str:	
-			STR   { $$=mknode(yytext,NULL,NULL);}
+			STR   { $$=mknode(yytext,NULL,NULL,counter);}
 single_char:
-			SINGLE_CHAR { $$=mknode(yytext,NULL,NULL);};
+			SINGLE_CHAR { $$=mknode(yytext,NULL,NULL,counter);};
 
 			
 
@@ -211,7 +212,7 @@ int main()
 { 
 		return yyparse();
 }
-node * mknode(char *token, node *left, node *right)
+node * mknode(char *token, node *left, node *right,int row_)
 {
 	node * newnode = (node*) malloc (sizeof(node));
 	if(token!=NULL)
@@ -219,11 +220,13 @@ node * mknode(char *token, node *left, node *right)
 		char* newstr = (char*) malloc (sizeof(token)+1);
 		strcpy (newstr,token);
 		newnode->token=newstr;
+		newnode->row=row_;
 	}
 	else
 	{ 
 		newnode->token = NULL;
 	}
+	
 	newnode->left = left;
 	newnode->right = right;
 	return newnode;
