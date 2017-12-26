@@ -264,12 +264,21 @@ typedef struct linkedlist
 
 typedef struct scope
 {
-	struct node *scope_head;
-    struct scope *inner_scope;
-    struct scope *outter_scope;
-	struct linkedlist *scops_list;//it scops list or type and ident list??
-}scope;
+	struct node *scope_head;//scopes rellevant tree root
+    struct scope *inner_scope;// not used yet
+    struct scope *outter_scope;// will hold poiter to currents "global" scope
+	struct linkedlist *scops_list;//type ident list
 
+scope* mk_scope(node* tree,scope *outterscope)
+{
+	scope *newscope = (scope*)malloc(sizeof(scope));
+	newscope->outter_scope = outterscope;
+	newscope->scope_head = tree;
+	newscope->scops_list = (linkedlist*)malloc(sizeof(linkedlist));
+	newscope->scops_list->ident=NULL;
+	newscope->scops_list->type=NULL;
+	return newscope;
+}
 
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
@@ -314,16 +323,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 	}
 	
 }
-scope* mk_scope(node* tree,scope *outterscope)
-{
-	scope *newscope = (scope*)malloc(sizeof(scope));
-	newscope->outter_scope = outterscope;
-	newscope->scope_head = tree;
-	newscope->scops_list = (linkedlist*)malloc(sizeof(linkedlist));
-	newscope->scops_list->ident=NULL;
-	newscope->scops_list->type=NULL;
-	return newscope;
-}
+
 void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
 {
 		if(current->ident&&strcmp(dec_ident,current->ident)==0)
