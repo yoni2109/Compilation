@@ -1,14 +1,11 @@
-int functionfortets123(){
-    int a;
+int functionfortets(int a){
     return;
 }
-int functionfortets13(){
-    int a;
-    void main(){
-        return;
-    }
+int functionfortets13(int a,int b){
+    int ax;
     return;
 }
+
 void main(){
     return;
 }
