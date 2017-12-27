@@ -84,7 +84,7 @@ expr:
 function_call:
 			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode("function_call",$1,$3);}
 expr_list:
-			expr expr_list { $$= mknode(NULL,$1,$2);}
+			expr expr_list { $$= mknode("arguments",$1,$2);}
 			| COMMA expr_list { $$=$2;}
 			|/*epsilon*/
 					
@@ -285,6 +285,29 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->inner_scopes_count=0;
 	return newscope;
 }
+int count_function_args(linkedlist* functions_list){
+	int count_args = 0;
+	functions_list = functions_list->args;
+	while(functions_list){
+		if(functions_list->type){
+			count_args++;
+		}
+		functions_list = functions_list->right;
+	}
+	return count_args;
+}
+int count_func_call_args(node* funcCallHead)
+{
+	int argscount = 0;
+	while(funcCallHead){
+		if(funcCallHead->right&&strcmp(funcCallHead->right->token,"arguments")==0){
+			argscount++;
+		}
+		funcCallHead = funcCallHead->right;
+	}
+	return argscount;
+
+}
 linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
 {
 	int found = 0;
@@ -293,15 +316,15 @@ linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
 	{
 		if(strcmp(CallingScopeList->ident,identifier)==0&& CallingScopeList->isfunc)
 		{
-			printf("found it\n");
-			found++;
+			//printf("found it\n");
+			//found++;
 			return CallingScopeList;
 		}
 		CallingScopeList = CallingScopeList->right;
 
 	}
 	if(CallingScope->outter_scope) return check_if_func_decleared(CallingScope->outter_scope ,identifier);
-	if(found==0)printf("not found\n");
+	printf("not found\n");
 	return NULL;
 
 }
@@ -335,7 +358,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 			current->type = strdup(dec_stat->left->left->token);
 			current->isfunc = true;
 			if(current->ident&&strcmp(current->ident,"main")==0) flag_main=1;//if the ident is main we mark the flag
-			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			//printf("success declaration on [%s %s] \n",current->type,current->ident);
 			check_dec_flag = 1;
 			return;
 		}
@@ -366,7 +389,7 @@ void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
 			current->ident = strdup(dec_ident);
 			current->type = strdup(type);
 			current->isfunc = false;
-			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			//printf("success declaration on [%s %s] \n",current->type,current->ident);
 			check_dec_flag = 1;
 			return;
 		}
@@ -485,10 +508,20 @@ void samentise_(scope* current_scope)
 	&&current_scope->scope_head->left->token
 	&&strcmp(current_scope->scope_head->left->token,"function_call")==0)
 	{
-		printf("%s\n",current_scope->scope_head->left->left->token);
-		linkedlist *declearation_linkedlist = check_if_decleared(current_scope,current_scope->scope_head->left->left->token);
+		int calling_args;
+		int function_args_count;
+		linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
 		if(declearation_linkedlist){
-			printf("recived decleration \n");
+			calling_args = count_func_call_args(current_scope->scope_head->left);
+			function_args_count = count_function_args(declearation_linkedlist);
+			if(calling_args<function_args_count){
+				printf("%s ",current_scope->scope_head->left->left->token);
+				printf("too few arguments from calling function\n");
+			}
+			if(calling_args>function_args_count){
+				printf("%s ",current_scope->scope_head->left->left->token);
+				printf("too many arguments from calling function\n");
+			}
 		}
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
@@ -503,6 +536,7 @@ void semantica(node *tree)
 {//recivce a tree from lexical analizer
     node *head = tree;
 	printtree(tree);
+	printf("\n\n");
 	scope *globalscope = mk_scope(tree,NULL); // firsr scope is the global scope 
 	samentise_(globalscope); 
 

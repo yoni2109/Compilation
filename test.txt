@@ -1,16 +1,16 @@
-int func1(){
-    return;
-}
-int functionfortets(int a){
+
+int func1(int a){
     return;
 }
 int functionfortets13(int a,int b){
     int ax;
-    int func2(){
+    int func2(int a, char b){
+        int a;
         return;
     }
     func1();
-    func2();
+    
+    func2(a,b,c,d,e);
     return;
 }
 
