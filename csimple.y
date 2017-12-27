@@ -285,7 +285,26 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->inner_scopes_count=0;
 	return newscope;
 }
+linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
+{
+	int found = 0;
+	linkedlist *CallingScopeList = CallingScope->scops_list;
+	while(CallingScopeList)
+	{
+		if(strcmp(CallingScopeList->ident,identifier)==0&& CallingScopeList->isfunc)
+		{
+			printf("found it\n");
+			found++;
+			return CallingScopeList;
+		}
+		CallingScopeList = CallingScopeList->right;
 
+	}
+	if(CallingScope->outter_scope) return check_if_func_decleared(CallingScope->outter_scope ,identifier);
+	if(found==0)printf("not found\n");
+	return NULL;
+
+}
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
 	
@@ -466,8 +485,11 @@ void samentise_(scope* current_scope)
 	&&current_scope->scope_head->left->token
 	&&strcmp(current_scope->scope_head->left->token,"function_call")==0)
 	{
-		linnkedlist *declearation_linkedlist = check_if_decleared(current_scope);
-		printf("got here\n%s\n",current_scope->scope_head->left->left->token);
+		printf("%s\n",current_scope->scope_head->left->left->token);
+		linkedlist *declearation_linkedlist = check_if_decleared(current_scope,current_scope->scope_head->left->left->token);
+		if(declearation_linkedlist){
+			printf("recived decleration \n");
+		}
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{
@@ -475,8 +497,6 @@ void samentise_(scope* current_scope)
 		return samentise_(current_scope);
 	}
 
-	
-	//printf("got here\n");
 }
 
 void semantica(node *tree)

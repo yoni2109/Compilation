@@ -1,8 +1,14 @@
+int func1(){
+    return;
+}
 int functionfortets(int a){
     return;
 }
 int functionfortets13(int a,int b){
     int ax;
+    int func2(){
+        return;
+    }
     func1();
     func2();
     return;
