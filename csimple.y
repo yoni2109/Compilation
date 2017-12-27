@@ -82,7 +82,7 @@ expr:
 			| function_call
 
 function_call:
-			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode(NULL,$1,$3);}
+			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode("function_call",$1,$3);}
 expr_list:
 			expr expr_list { $$= mknode(NULL,$1,$2);}
 			| COMMA expr_list { $$=$2;}
@@ -377,11 +377,13 @@ void check_dec_idents(scope* current_scope)
 }
 void add_arguments(scope *globalscope,node* args_head)
 {
+	int mainargs = 0;
 	linkedlist *globals_list = globalscope->scops_list;
 	linkedlist *function_args_list = globalscope->inner_scopes[globalscope->inner_scopes_count-1]->scops_list;
 	while(globals_list->right){
 		globals_list = globals_list->right;
 	}
+	if(strcmp(globals_list->ident,"main")==0){mainargs = 1;}
 	globals_list->args = (linkedlist*)malloc(sizeof(linkedlist));
 	globals_list = globals_list->args;
 	if(args_head->left) args_head = args_head->left;
@@ -389,6 +391,9 @@ void add_arguments(scope *globalscope,node* args_head)
 	{
 		if(args_head->left)
 		{
+			if(mainargs){
+				printf("main cannot recive arguments!\n");
+			}
 			if(args_head->left->left->token) globals_list->type = strdup(args_head->left->left->token);
 			//printf("%s past it\n",args_head->left->right->token);
 			globals_list->ident = NULL;
@@ -411,13 +416,16 @@ void samentise_(scope* current_scope)
 	scope *innerscope;
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
 	{
+		
 		//TODO:  return statement
 		current_scope->scope_head = current_scope->scope_head->left; 
 	}
 	if( current_scope->scope_head 
 		&& current_scope->scope_head->left 
+		&& current_scope->scope_head->left->token
 		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
 	{
+	
 		cehck_func_dec(current_scope->scope_head->left->left,current_scope->scops_list);
 		if(check_dec_flag == 1)
 		{
@@ -446,17 +454,29 @@ void samentise_(scope* current_scope)
 	}
 	if(	current_scope->scope_head 
 		&& current_scope->scope_head->left 
+		&& current_scope->scope_head->left->token
 		&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
 	{
 		savestate = current_scope->scope_head;
 		check_dec_idents(current_scope);
 		current_scope->scope_head = savestate;
 	}
+	if(current_scope->scope_head
+	&&current_scope->scope_head->left
+	&&current_scope->scope_head->left->token
+	&&strcmp(current_scope->scope_head->left->token,"function_call")==0)
+	{
+		linnkedlist *declearation_linkedlist = check_if_decleared(current_scope);
+		printf("got here\n%s\n",current_scope->scope_head->left->left->token);
+	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{
 		current_scope->scope_head = current_scope->scope_head->right;
 		return samentise_(current_scope);
 	}
+
+	
+	//printf("got here\n");
 }
 
 void semantica(node *tree)

@@ -3,6 +3,8 @@ int functionfortets(int a){
 }
 int functionfortets13(int a,int b){
     int ax;
+    func1();
+    func2();
     return;
 }
 
