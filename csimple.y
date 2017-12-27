@@ -48,7 +48,7 @@ program:
 
 line:  	
 			statement  
-			| expr SEMICOLON
+			| expr SEMICOLON 
 
 statement: 	
 			//decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
@@ -288,7 +288,8 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->inner_scopes_count=0;
 	return newscope;
 }
-int count_function_args(linkedlist* functions_list){
+int count_function_args(linkedlist* functions_list)
+{
 	int count_args = 0;
 	functions_list = functions_list->args;
 	while(functions_list){
@@ -519,13 +520,21 @@ void samentise_(scope* current_scope)
 			function_args_count = count_function_args(declearation_linkedlist);
 			if(calling_args<function_args_count){
 				printf("%s ",current_scope->scope_head->left->left->token);
-				printf("too few arguments from calling function\n");
+				printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
 			}
 			if(calling_args>function_args_count){
 				printf("%s ",current_scope->scope_head->left->left->token);
-				printf("too many arguments from calling function\n");
+				printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
 			}
 		}
+	}
+	if(	current_scope->scope_head
+		&&current_scope->scope_head->left
+		&&current_scope->scope_head->left->token
+		&&strcmp(current_scope->scope_head->left->token,"=")==0)
+	{
+		printf("got here\n");
+
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{
