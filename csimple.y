@@ -2,6 +2,7 @@
 	#include <stdio.h>
 	#include <string.h>
 	#include <stdlib.h>
+	#include <stdbool.h>
 	typedef struct node
 		{ char *token;
 		  struct node *left;
@@ -82,9 +83,9 @@ expr:
 			| function_call
 
 function_call:
-			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode(NULL,$1,$3,counter);}
+			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode("function_call",$1,$3,counter);}
 expr_list:
-			expr expr_list { $$= mknode(NULL,$1,$2,counter);}
+			expr expr_list { $$= mknode("arguments",$1,$2,counter);}
 			| COMMA expr_list { $$=$2;}
 			|/*epsilon*/
 					
@@ -206,12 +207,12 @@ single_char:
 
 %%
 #include "lex.yy.c"
-static int flag_main=0;//flag for main
-static int check_dec_flag = 0;
 int main()
 { 
 		return yyparse();
 }
+static int flag_main=0;//flag for main
+static int check_dec_flag = 0;
 node * mknode(char *token, node *left, node *right,int row_)
 {
 	node * newnode = (node*) malloc (sizeof(node));
@@ -262,8 +263,9 @@ typedef struct linkedlist
 {
 	char *type;
 	char *ident;
-    struct linkedlist *left;
+	bool isfunc;
     struct linkedlist *right;
+    struct linkedlist *args;
 }linkedlist;
 
 typedef struct scope
@@ -286,14 +288,56 @@ scope* mk_scope(node* tree,scope *outterscope)
 	newscope->inner_scopes_count=0;
 	return newscope;
 }
+int count_function_args(linkedlist* functions_list){
+	int count_args = 0;
+	functions_list = functions_list->args;
+	while(functions_list){
+		if(functions_list->type){
+			count_args++;
+		}
+		functions_list = functions_list->right;
+	}
+	return count_args;
+}
+int count_func_call_args(node* funcCallHead)
+{
+	int argscount = 0;
+	while(funcCallHead){
+		if(funcCallHead->right&&strcmp(funcCallHead->right->token,"arguments")==0){
+			argscount++;
+		}
+		funcCallHead = funcCallHead->right;
+	}
+	return argscount;
 
+}
+linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
+{
+	int found = 0;
+	linkedlist *CallingScopeList = CallingScope->scops_list;
+	while(CallingScopeList)
+	{
+		if(strcmp(CallingScopeList->ident,identifier)==0&& CallingScopeList->isfunc)
+		{
+			//printf("found it\n");
+			//found++;
+			return CallingScopeList;
+		}
+		CallingScopeList = CallingScopeList->right;
+
+	}
+	if(CallingScope->outter_scope) return check_if_func_decleared(CallingScope->outter_scope ,identifier);
+	printf("not found\n");
+	return NULL;
+
+}
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
 	
-	if( (current->ident&&strcmp(dec_stat->right->token,current->ident)==0)//we check also if there is main and the ident is main
-	   ||((current->ident&&strcmp("main",dec_stat->right->token)==0) && (flag_main==1)))//we also can copy this if only for the main
+	if( (current->ident&&strcmp(dec_stat->left->right->token,current->ident)==0)//we check also if there is main and the ident is main
+	   ||((current->ident&&strcmp("main",dec_stat->left->right->token)==0) && (flag_main==1)))//we also can copy this if only for the main
 	{
-		printf("%s already defined\n",dec_stat->right->token);
+		printf("%s already defined\n",dec_stat->left->right->token);
 		return;
 	}
 	
@@ -301,7 +345,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 	{
 		if(current->right)
 		{
-			printf("move right to next list\n");
+			//printf("move right to next list\n");
 			return cehck_func_dec(dec_stat,current->right);
 		}
 		
@@ -310,20 +354,14 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 			
 			if(current->ident)
 			{
-				//printf("****\n");
 				current->right = (linkedlist*)malloc(sizeof(linkedlist));
 				current=current->right;
 			}
-			
-
-			current->ident = strdup(dec_stat->right->token);
-			current->type = strdup(dec_stat->left->token);
-
+			current->ident = strdup(dec_stat->left->right->token);
+			current->type = strdup(dec_stat->left->left->token);
+			current->isfunc = true;
 			if(current->ident&&strcmp(current->ident,"main")==0) flag_main=1;//if the ident is main we mark the flag
-			//printf("check if main %s %d\n",current->ident,flag_main);
-
-			printf("success declaration on [%s %s] \n",current->type,current->ident);
-			//printf("flag main %d\n",flag_main);
+			//printf("success declaration on [%s %s] \n",current->type,current->ident);
 			check_dec_flag = 1;
 			return;
 		}
@@ -353,7 +391,8 @@ void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
 			}	
 			current->ident = strdup(dec_ident);
 			current->type = strdup(type);
-			printf("success declaration on [%s %s] \n",current->type,current->ident);
+			current->isfunc = false;
+			//printf("success declaration on [%s %s] \n",current->type,current->ident);
 			check_dec_flag = 1;
 			return;
 		}
@@ -381,21 +420,58 @@ void check_dec_idents(scope* current_scope)
 
 	}
 }
+void add_arguments(scope *globalscope,node* args_head)
+{
+	int mainargs = 0;
+	linkedlist *globals_list = globalscope->scops_list;
+	linkedlist *function_args_list = globalscope->inner_scopes[globalscope->inner_scopes_count-1]->scops_list;
+	while(globals_list->right){
+		globals_list = globals_list->right;
+	}
+	if(strcmp(globals_list->ident,"main")==0){mainargs = 1;}
+	globals_list->args = (linkedlist*)malloc(sizeof(linkedlist));
+	globals_list = globals_list->args;
+	if(args_head->left) args_head = args_head->left;
+	while(args_head)
+	{
+		if(args_head->left)
+		{
+			if(mainargs){
+				printf("main cannot recive arguments!\n");
+			}
+			if(args_head->left->left->token) globals_list->type = strdup(args_head->left->left->token);
+			//printf("%s past it\n",args_head->left->right->token);
+			globals_list->ident = NULL;
+			function_args_list->type = strdup(args_head->left->left->token);
+			function_args_list->ident = strdup(args_head->left->right->token);
+			globals_list->right = (linkedlist*)malloc(sizeof(linkedlist));
+			globals_list = globals_list->right;
+			function_args_list->right = (linkedlist*)malloc(sizeof(linkedlist));
+			function_args_list = function_args_list->right;
+		}
+		args_head = args_head->right;
+	}
+	
+
+	
+}
 void samentise_(scope* current_scope) 
 {
 	node* savestate;
 	scope *innerscope;
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
 	{
-		//TODO:  func args
+		
 		//TODO:  return statement
 		current_scope->scope_head = current_scope->scope_head->left; 
 	}
 	if( current_scope->scope_head 
 		&& current_scope->scope_head->left 
+		&& current_scope->scope_head->left->token
 		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
 	{
-		//cehck_func_dec(current_scope->scope_head->left->left->left,current_scope->scops_list);
+	
+		cehck_func_dec(current_scope->scope_head->left->left,current_scope->scops_list);
 		if(check_dec_flag == 1)
 		{
 			check_dec_flag=0;
@@ -407,10 +483,13 @@ void samentise_(scope* current_scope)
 				current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,current_scope->inner_scopes_count+1);
 				current_scope->inner_scopes_count++;
 			}
-			current_scope->inner_scopes[current_scope->inner_scopes_count-1] = mk_scope(current_scope->scope_head->left->right,current_scope);
 			
+			current_scope->inner_scopes[current_scope->inner_scopes_count-1] = mk_scope(current_scope->scope_head->left/*->right*/,current_scope);
+			add_arguments(current_scope,current_scope->scope_head->left->left->right);
+			//the above sends the current scope 
+			//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
 			samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
-			//printf("cehck func dec \n");
+			
 		}
 		if(current_scope->scope_head->right)
 		{
@@ -418,26 +497,49 @@ void samentise_(scope* current_scope)
 			return samentise_(current_scope);
 		}
 	}
-	if(current_scope->scope_head 
-	&& current_scope->scope_head->left 
-	&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
+	if(	current_scope->scope_head 
+		&& current_scope->scope_head->left 
+		&& current_scope->scope_head->left->token
+		&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
 	{
 		savestate = current_scope->scope_head;
-		//left son is a type
-		//right son is identifiers or a single identifier
 		check_dec_idents(current_scope);
 		current_scope->scope_head = savestate;
+	}
+	if(current_scope->scope_head
+	&&current_scope->scope_head->left
+	&&current_scope->scope_head->left->token
+	&&strcmp(current_scope->scope_head->left->token,"function_call")==0)
+	{
+		int calling_args;
+		int function_args_count;
+		linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
+		if(declearation_linkedlist){
+			calling_args = count_func_call_args(current_scope->scope_head->left);
+			function_args_count = count_function_args(declearation_linkedlist);
+			if(calling_args<function_args_count){
+				printf("%s ",current_scope->scope_head->left->left->token);
+				printf("too few arguments from calling function\n");
+			}
+			if(calling_args>function_args_count){
+				printf("%s ",current_scope->scope_head->left->left->token);
+				printf("too many arguments from calling function\n");
+			}
+		}
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{
 		current_scope->scope_head = current_scope->scope_head->right;
 		return samentise_(current_scope);
 	}
+
 }
 
-void semantica(node *tree){//recivce a tree from lexical analizer
+void semantica(node *tree)
+{//recivce a tree from lexical analizer
     node *head = tree;
 	printtree(tree);
+	printf("\n\n");
 	scope *globalscope = mk_scope(tree,NULL); // firsr scope is the global scope 
 	samentise_(globalscope); 
 
