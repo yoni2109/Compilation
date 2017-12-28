@@ -25,7 +25,8 @@
 %token _TRUE , _FALSE
 %token OCTAL_NUM, HEX_NUM , BINARY_NUM
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
-%left AND,DIV,SET,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,DEREF,OR,PIPE
+%left SET
+%left AND,DIV,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,DEREF,OR,PIPE
 %%
 
 recived_program: /*recived program is the first reduce terminal*/
@@ -332,6 +333,107 @@ linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
 	return NULL;
 
 }
+void gothere(char* str){
+	printf("got here %s\n",str);
+}
+linkedlist* check_if_ident_decleared(char* ident,scope* current_scope)
+{
+	linkedlist * currentscopslist;
+	if(current_scope){
+		if(current_scope->scops_list)
+			currentscopslist = current_scope->scops_list;
+	}
+	while(currentscopslist)
+	{
+		if(currentscopslist->ident && strcmp(currentscopslist->ident,ident)==0){
+			if(currentscopslist->isfunc){
+			}
+			else
+			{
+				//gothere("found it");
+				return currentscopslist;
+			}
+		}
+		currentscopslist= currentscopslist->right;
+	}
+	if(current_scope->outter_scope) return check_if_ident_decleared(ident,current_scope->outter_scope);
+	return NULL;
+}
+static int set_fail_flag =0;
+static int integer_flag = 0;
+void samentise_expr(scope* current_scope,node* expr_head)
+{
+	linkedlist* left_side;
+	linkedlist*  right_side;
+	char* token;
+	int number;
+	if(expr_head->left->token){
+		left_side = check_if_ident_decleared(expr_head->left->token,current_scope);
+		if(!left_side){
+			gothere("left side wasnt decleared");
+		}
+	}
+	if(left_side)
+	{
+		if(strcmp(left_side->type,"int")==0)
+		{
+			integer_flag = 1;
+		}
+		if(expr_head->right){
+			//check if right son is an expr
+			if(   strcmp(expr_head->right->token,"+")==0
+				||strcmp(expr_head->right->token,"-")==0
+				||strcmp(expr_head->right->token,"*")==0
+				||strcmp(expr_head->right->token,"/")==0)
+			{
+				// * + - / 
+				samentise_expr(current_scope,expr_head->right);
+				if (set_fail_flag ==1){
+					printf("recurs error\n");
+					return;
+				}
+				return;
+				// check if integer
+			}
+			if(   strcmp(expr_head->right->token,"^")==0
+				||strcmp(expr_head->right->token,"&")==0
+				||strcmp(expr_head->right->token,"||")==0)
+				{
+					if(expr_head->right->left->token)
+					{
+						right_side = check_if_ident_decleared(expr_head->right->left->token,current_scope);
+						//^ &
+						gothere("pointer reference or deref OR pipes");
+					}
+				}
+			if(expr_head->right->token){
+				token = strdup(expr_head->right->token);
+				number = atoi(token);
+
+			}
+			if(expr_head->right->token)
+			{
+				right_side =  check_if_ident_decleared(expr_head->right->token,current_scope);
+				if (right_side&&printf("if right side"))
+				{
+					if(strcmp(right_side->type,left_side->type)==0){
+						gothere("both integers");
+					}
+					else set_fail_flag = 1;
+					if(set_fail_flag == 1)gothere("error raised");
+					return;
+
+				}
+				else
+					gothere("right side wasnt decleared");
+			}
+
+		//יש תוקן מצד ימין
+		//יש אקספרשן מצד ימין
+		}
+	}
+
+}
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
 	
@@ -466,75 +568,89 @@ void samentise_(scope* current_scope)
 		//TODO:  return statement
 		current_scope->scope_head = current_scope->scope_head->left; 
 	}
-	if( current_scope->scope_head 
-		&& current_scope->scope_head->left 
-		&& current_scope->scope_head->left->token
-		&& strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
-	{
-	
-		cehck_func_dec(current_scope->scope_head->left->left,current_scope->scops_list);
-		if(check_dec_flag == 1)
-		{
-			check_dec_flag=0;
-			if(current_scope->inner_scopes_count==0){
-				current_scope->inner_scopes = (scope**)malloc(sizeof(scope*)+1);
-				current_scope->inner_scopes_count++;
-			}
-			else if(current_scope->inner_scopes_count){
-				current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,current_scope->inner_scopes_count+1);
-				current_scope->inner_scopes_count++;
-			}
-			
-			current_scope->inner_scopes[current_scope->inner_scopes_count-1] = mk_scope(current_scope->scope_head->left/*->right*/,current_scope);
-			add_arguments(current_scope,current_scope->scope_head->left->left->right);
-			//the above sends the current scope 
-			//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
-			samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
-			
-		}
-		if(current_scope->scope_head->right)
-		{
-			current_scope->scope_head = current_scope->scope_head->right;
-			return samentise_(current_scope);
-		}
-	}
 	if(	current_scope->scope_head 
 		&& current_scope->scope_head->left 
-		&& current_scope->scope_head->left->token
-		&& strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
+		&& current_scope->scope_head->left->token)
 	{
-		savestate = current_scope->scope_head;
-		check_dec_idents(current_scope);
-		current_scope->scope_head = savestate;
-	}
-	if(current_scope->scope_head
-	&&current_scope->scope_head->left
-	&&current_scope->scope_head->left->token
-	&&strcmp(current_scope->scope_head->left->token,"function_call")==0)
-	{
-		int calling_args;
-		int function_args_count;
-		linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
-		if(declearation_linkedlist){
-			calling_args = count_func_call_args(current_scope->scope_head->left);
-			function_args_count = count_function_args(declearation_linkedlist);
-			if(calling_args<function_args_count){
-				printf("%s ",current_scope->scope_head->left->left->token);
-				printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+		if(strcmp(current_scope->scope_head->left->token,"function")==0 ) // end if conditions
+		{
+	
+			cehck_func_dec(current_scope->scope_head->left->left,current_scope->scops_list);
+			if(check_dec_flag == 1)
+			{
+				check_dec_flag=0;
+				if(current_scope->inner_scopes_count==0){
+					current_scope->inner_scopes = (scope**)malloc(sizeof(scope*)+1);
+					current_scope->inner_scopes_count++;
+				}
+				else if(current_scope->inner_scopes_count){
+					current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,current_scope->inner_scopes_count+1);
+					current_scope->inner_scopes_count++;
+				}
+			
+				current_scope->inner_scopes[current_scope->inner_scopes_count-1] = mk_scope(current_scope->scope_head->left/*->right*/,current_scope);
+				add_arguments(current_scope,current_scope->scope_head->left->left->right);
+				//the above sends the current scope 
+				//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
+				samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
+			
 			}
-			if(calling_args>function_args_count){
-				printf("%s ",current_scope->scope_head->left->left->token);
-				printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+			if(current_scope->scope_head->right)
+			{
+				current_scope->scope_head = current_scope->scope_head->right;
+				return samentise_(current_scope);
 			}
 		}
-	}
-	if(	current_scope->scope_head
-		&&current_scope->scope_head->left
-		&&current_scope->scope_head->left->token
-		&&strcmp(current_scope->scope_head->left->token,"=")==0)
-	{
-		printf("got here\n");
-
+		if( strcmp(current_scope->scope_head->left->token,"decleration_statement")==0)
+		{
+			savestate = current_scope->scope_head;
+			check_dec_idents(current_scope);
+			current_scope->scope_head = savestate;
+		}
+		if(strcmp(current_scope->scope_head->left->token,"function_call")==0)
+		{
+			int calling_args;
+			int function_args_count;
+			linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
+			if(declearation_linkedlist){
+				calling_args = count_func_call_args(current_scope->scope_head->left);
+				function_args_count = count_function_args(declearation_linkedlist);
+				if(calling_args<function_args_count){
+					printf("%s ",current_scope->scope_head->left->left->token);
+					printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+				}
+				if(calling_args>function_args_count){
+					printf("%s ",current_scope->scope_head->left->left->token);
+					printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+				}
+			}
+		}
+		if(strcmp(current_scope->scope_head->left->token,"=")==0)
+		{
+			gothere(" =  samentize_");
+			samentise_expr(current_scope,current_scope->scope_head->left);
+			//printf("got here\n");
+		}
+		if(strcmp(current_scope->scope_head->left->token,"+")==0)
+		{
+			//printf("got here\n");
+		}
+		if(strcmp(current_scope->scope_head->left->token,"*")==0)
+		{
+			printf("got here\n");
+		}
+		if(strcmp(current_scope->scope_head->left->token,"/")==0)
+		{
+			printf("got here\n");
+		}
+		if(strcmp(current_scope->scope_head->left->token,"-")==0)
+		{
+			printf("got here\n");
+		}
+		if(strcmp(current_scope->scope_head->left->token,"||")==0)
+		{
+			printf("got here\n");
+		}
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{

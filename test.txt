@@ -2,16 +2,20 @@
 int func1(int a){
     return;
 }
-int functionfortets13(int a,int b){
-    int ax;
+char a;
+
+int functionfortets13(int b){
+    int ax,c,f,d;
     int func2(int a, char b){
-        int a;
+        
         return;
     }
     func1();
     func2(a,b,c,d,e);
-    a=v;
+    ax =  c+f;
+    
     return;
+    
 }
 
 void main(){
