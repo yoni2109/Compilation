@@ -26,7 +26,8 @@
 %token OCTAL_NUM, HEX_NUM , BINARY_NUM
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left SET
-%left AND,DIV,EQ,GT,GE,LT,LE,MINUS,NOT,NE,PLUS,MULT,REF,DEREF,OR,PIPE
+%left PLUS
+%left AND,DIV,EQ,GT,GE,LT,LE,MINUS,NOT,NE,MULT,REF,DEREF,OR,PIPE
 %%
 
 recived_program: /*recived program is the first reduce terminal*/
@@ -49,7 +50,7 @@ program:
 
 line:  	
 			statement  
-			| expr SEMICOLON 
+			| expr SEMICOLON { $$ = mknode("expr",$1,NULL,counter);}
 
 statement: 	
 			//decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
@@ -74,7 +75,7 @@ expr:
 			| expr MINUS expr { $$=mknode("-",$1,$3,counter);}
 			| expr MULT expr { $$=mknode("*",$1,$3,counter);}
 			| expr DIV expr { $$=mknode("/",$1,$3,counter);}
-			| PIPE expr PIPE { $$=mknode("||",$2,NULL,counter);}	
+			| PIPE expr PIPE { $$=mknode("| |",$2,NULL,counter);}	
 			| ident SET expr { $$=mknode("=",$1,$3,counter);}
 			| value
 			| DEREF ident{ $$=mknode("^",$2,NULL,counter);}
@@ -168,7 +169,8 @@ value:
 			| OCTAL_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
 			| BINARY_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
 			| HEX_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
-			| ident
+			| ident /*{ $$ = mknode("ident",$1,NULL,counter);}*/
+			| ident_string { $$ = mknode("string_at",$1,NULL,counter);}
 			| _NULL { $$=mknode(yytext,NULL,NULL,counter);}
 			
 decleration_statement: 
@@ -208,6 +210,9 @@ single_char:
 
 %%
 #include "lex.yy.c"
+//char* samentise_expr(scope* current_scope,node* expr_head);
+//void check_args(scope* current,node* args_calling,linkedlist * functions_list);
+
 int main()
 { 
 		return yyparse();
@@ -329,7 +334,7 @@ linkedlist * check_if_func_decleared(scope *CallingScope ,char *identifier)
 
 	}
 	if(CallingScope->outter_scope) return check_if_func_decleared(CallingScope->outter_scope ,identifier);
-	printf("not found\n");
+	printf("[%s] used before definition\n",identifier);
 	return NULL;
 
 }
@@ -359,81 +364,286 @@ linkedlist* check_if_ident_decleared(char* ident,scope* current_scope)
 	if(current_scope->outter_scope) return check_if_ident_decleared(ident,current_scope->outter_scope);
 	return NULL;
 }
-static int set_fail_flag =0;
-static int integer_flag = 0;
-void samentise_expr(scope* current_scope,node* expr_head)
+void check_args(scope* current,node* args_calling,linkedlist * functions_list);
+
+char* samentise_expr(scope* current_scope,node* expr_head)
 {
-	linkedlist* left_side;
-	linkedlist*  right_side;
-	char* token;
-	int number;
-	if(expr_head->left->token){
-		left_side = check_if_ident_decleared(expr_head->left->token,current_scope);
-		if(!left_side){
-			gothere("left side wasnt decleared");
-		}
-	}
-	if(left_side)
+	char* type1,*type2;
+	if(strcmp(expr_head->token,"=")==0)
 	{
-		if(strcmp(left_side->type,"int")==0)
+		//both sides are of the same type
+		type1 = samentise_expr(current_scope,expr_head->left);
+		//printf("got here with [%s]\n",expr_head->token);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0)
 		{
-			integer_flag = 1;
+			printf(" OK \n");
+			return type1;
 		}
-		if(expr_head->right){
-			//check if right son is an expr
-			if(   strcmp(expr_head->right->token,"+")==0
-				||strcmp(expr_head->right->token,"-")==0
-				||strcmp(expr_head->right->token,"*")==0
-				||strcmp(expr_head->right->token,"/")==0)
-			{
-				// * + - / 
-				samentise_expr(current_scope,expr_head->right);
-				if (set_fail_flag ==1){
-					printf("recurs error\n");
-					return;
-				}
-				return;
-				// check if integer
-			}
-			if(   strcmp(expr_head->right->token,"^")==0
-				||strcmp(expr_head->right->token,"&")==0
-				||strcmp(expr_head->right->token,"||")==0)
-				{
-					if(expr_head->right->left->token)
-					{
-						right_side = check_if_ident_decleared(expr_head->right->left->token,current_scope);
-						//^ &
-						gothere("pointer reference or deref OR pipes");
-					}
-				}
-			if(expr_head->right->token){
-				token = strdup(expr_head->right->token);
-				number = atoi(token);
-
-			}
-			if(expr_head->right->token)
-			{
-				right_side =  check_if_ident_decleared(expr_head->right->token,current_scope);
-				if (right_side&&printf("if right side"))
-				{
-					if(strcmp(right_side->type,left_side->type)==0){
-						gothere("both integers");
-					}
-					else set_fail_flag = 1;
-					if(set_fail_flag == 1)gothere("error raised");
-					return;
-
-				}
-				else
-					gothere("right side wasnt decleared");
-			}
-
-		//יש תוקן מצד ימין
-		//יש אקספרשן מצד ימין
+		else
+		{
+			printf("not ok\n");
+			return NULL;
 		}
 	}
+	if(strcmp(expr_head->token,"+")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"-")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"*")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"/")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"^")==0)
+	{
+		//his son is a poiter 
+	}
+	if(strcmp(expr_head->token,"&")==0)
+	{
+		//his son is int or char or string[i]
+	}
+	if(strcmp(expr_head->token,"| |")==0)
+	{
+		//his son is int or string and the value return is integer
+	}
+	if(strcmp(expr_head->token,"&&")==0)
+	{
+		//both sides are boolean
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"boolean")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"||")==0)
+	{
+		//both sides are boolean
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"boolean")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"<")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,">")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"<=")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,">=")==0)
+	{
+		//both sides are integers
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&strcmp(type1,"int")==0)
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"==")==0)
+	{
+		//both sides are integers or bolean together
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&(strcmp(type1,"int")==0||strcmp(type1,"boolean")==0))
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"!=")==0)
+	{
+		//both sides are integers or bolean together
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&type2&&strcmp(type1,type2)==0&&(strcmp(type1,"int")==0||strcmp(type1,"boolean")==0))
+		{
+			return "boolean";
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	if(atoi(expr_head->token) != 0 || strcmp(expr_head->token,"0")==0)
+	{
+		//the token is a number;
+		return "int";
+	}
+	if(strcmp(expr_head->token,"string_at")==0)
+	{
+		// his ident is a string the value in the box must be a integer
+	}
+	if(strcmp(expr_head->token,"[]")==0)
+	{
+		// left son must be an integer
+	}
+	if(strcmp(expr_head->token,"function_call")==0)
+	{
+		//check function type;
+		int calling_args;
+		int function_args_count;
+		linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,expr_head->left->token);
+		if(declearation_linkedlist){
+			calling_args = count_func_call_args(expr_head);
+			function_args_count = count_function_args(declearation_linkedlist);
+			if(calling_args<function_args_count){
+				printf("%s ",expr_head->left->token);
+				printf("too few arguments from calling function in line [%d]\n",expr_head->left->row);
+			}
+			if(calling_args>function_args_count){
+				printf("%s ",expr_head->left->token);
+				printf("too many arguments from calling function in line [%d]\n",expr_head->left->row);
+			}
+			if(calling_args == function_args_count)
+			{
+				check_args(current_scope,expr_head,declearation_linkedlist);
+				printf("checked args\n");
+			}
+			//check correction of args
+			return declearation_linkedlist->type;
+			}
+	}
+	if(expr_head&&expr_head->token)
+	{
+		//check if identifiere decleared and return his type
+		linkedlist* idents_node  = check_if_ident_decleared(expr_head->token,current_scope);
+		if(idents_node)
+		{
+			//printf("token and tralala\n");
+			return idents_node->type;
+		}
+		else return NULL;
+	}
+	return NULL;
+	
+
 
 }
+void check_args(scope* current,node* args_calling,linkedlist * functions_list_recived)
+{
+	char* argtype;
+	linkedlist* functions_list = functions_list_recived;
+	functions_list = functions_list->args;
+	args_calling = args_calling->right;
+	while(args_calling)
+	{
+		argtype = samentise_expr(current,args_calling->left);
+		if(argtype&&strcmp(argtype,functions_list->type)==0)
+		{
+			//printf ("good type\n");
+		}
+		else
+		{
+			printf("sent argument is from type [%s] and the function [%s] should reciev [%s] type argument at line [%d]\n",argtype,functions_list_recived->ident,functions_list->type,args_calling->row+1);
+		}
+		args_calling = args_calling->right;
+		functions_list = functions_list->right;
+
+	}
+}
+
 void cehck_func_dec(node *dec_stat,linkedlist *current)
 {
 	
@@ -593,6 +803,7 @@ void samentise_(scope* current_scope)
 				//the above sends the current scope 
 				//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
 				samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
+				check_return_statement()
 			
 			}
 			if(current_scope->scope_head->right)
@@ -607,50 +818,29 @@ void samentise_(scope* current_scope)
 			check_dec_idents(current_scope);
 			current_scope->scope_head = savestate;
 		}
-		if(strcmp(current_scope->scope_head->left->token,"function_call")==0)
+		// if(strcmp(current_scope->scope_head->left->token,"function_call")==0)
+		// {
+		// 	int calling_args;
+		// 	int function_args_count;
+		// 	linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
+		// 	if(declearation_linkedlist){
+		// 		calling_args = count_func_call_args(current_scope->scope_head->left);
+		// 		function_args_count = count_function_args(declearation_linkedlist);
+		// 		if(calling_args<function_args_count){
+		// 			printf("%s ",current_scope->scope_head->left->left->token);
+		// 			printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+		// 		}
+		// 		if(calling_args>function_args_count){
+		// 			printf("%s ",current_scope->scope_head->left->left->token);
+		// 			printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
+		// 		}
+		// 	}
+		// }
+		if(strcmp(current_scope->scope_head->left->token,"expr")==0)
 		{
-			int calling_args;
-			int function_args_count;
-			linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
-			if(declearation_linkedlist){
-				calling_args = count_func_call_args(current_scope->scope_head->left);
-				function_args_count = count_function_args(declearation_linkedlist);
-				if(calling_args<function_args_count){
-					printf("%s ",current_scope->scope_head->left->left->token);
-					printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
-				}
-				if(calling_args>function_args_count){
-					printf("%s ",current_scope->scope_head->left->left->token);
-					printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
-				}
-			}
+			samentise_expr(current_scope,current_scope->scope_head->left->left);
 		}
-		if(strcmp(current_scope->scope_head->left->token,"=")==0)
-		{
-			gothere(" =  samentize_");
-			samentise_expr(current_scope,current_scope->scope_head->left);
-			//printf("got here\n");
-		}
-		if(strcmp(current_scope->scope_head->left->token,"+")==0)
-		{
-			//printf("got here\n");
-		}
-		if(strcmp(current_scope->scope_head->left->token,"*")==0)
-		{
-			printf("got here\n");
-		}
-		if(strcmp(current_scope->scope_head->left->token,"/")==0)
-		{
-			printf("got here\n");
-		}
-		if(strcmp(current_scope->scope_head->left->token,"-")==0)
-		{
-			printf("got here\n");
-		}
-		if(strcmp(current_scope->scope_head->left->token,"||")==0)
-		{
-			printf("got here\n");
-		}
+
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
 	{

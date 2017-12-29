@@ -1,24 +1,10 @@
-
-int func1(int a){
-    return;
-}
-char a;
-
-int functionfortets13(int b){
+int functionfortets13(int b,int k){
     int ax,c,f,d;
-    int func2(int a, char b){
-        
-        return;
-    }
-    func1();
-    func2(a,b,c,d,e);
-    ax =  c+f;
+    char com;
+    ax = b +c + 6/7*c;
+    functionfortets13(ax,com);
     
     return;
     
 }
 
-void main(){
-    return;
-}
-int bax;
