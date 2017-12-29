@@ -1,10 +1,9 @@
-int functionfortets13(int b,int k){
-    int ax,c,f,d;
-    char com;
-    ax = b +c + 6/7*c;
-    functionfortets13(ax,com);
-    
-    return;
+boolean functionfortets13(int b,int k){
+    int ax;
+    boolean bx;
+    functionfortets13(ax,ax);
+    bx = ax;
+    return ax ;
     
 }
 

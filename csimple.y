@@ -116,8 +116,8 @@ function_code_block:
 			| /*epsilon*/
 
 return_statement:
-			RETURN expr SEMICOLON { $$ = mknode("return",$2,NULL,counter);}
-			|RETURN SEMICOLON
+			RETURN expr SEMICOLON { $$ = mknode("return_statement",$2,NULL,counter);}
+			|RETURN SEMICOLON{ $$ = mknode("return_statement",mknode("return",NULL,NULL,counter),NULL,counter);}
 
 code_block_if: 	
 			expr SEMICOLON else_statement { $$=mknode("BLOCK",$1,$3,counter);}
@@ -543,7 +543,12 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		//both sides are integers or bolean together
 		type1 = samentise_expr(current_scope,expr_head->left);
 		type2 = samentise_expr(current_scope,expr_head->right);
-		if(type1&&type2&&strcmp(type1,type2)==0&&(strcmp(type1,"int")==0||strcmp(type1,"boolean")==0))
+		if(type1&&type2&&strcmp(type1,type2)==0
+			&&(	strcmp(type1,"int")==0
+				||strcmp(type1,"intp")==0
+				||strcmp(type1,"char")==0
+				||strcmp(type1,"charp")==0
+				||strcmp(type1,"boolean")==0))
 		{
 			return "boolean";
 		}
@@ -557,7 +562,12 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		//both sides are integers or bolean together
 		type1 = samentise_expr(current_scope,expr_head->left);
 		type2 = samentise_expr(current_scope,expr_head->right);
-		if(type1&&type2&&strcmp(type1,type2)==0&&(strcmp(type1,"int")==0||strcmp(type1,"boolean")==0))
+		if(type1&&type2&&strcmp(type1,type2)==0
+			&&(	strcmp(type1,"int")==0
+				||strcmp(type1,"intp")==0
+				||strcmp(type1,"char")==0
+				||strcmp(type1,"charp")==0
+				||strcmp(type1,"boolean")==0))
 		{
 			return "boolean";
 		}
@@ -768,6 +778,35 @@ void add_arguments(scope *globalscope,node* args_head)
 
 	
 }
+void check_return_statement(scope* current_scope,node* return_statement)
+{
+	char* type;
+	linkedlist* func_node = current_scope->scops_list;
+	while(func_node->right)
+	{
+		func_node = func_node->right;
+	}
+	if(return_statement->left)
+	{
+		type = samentise_expr(current_scope->inner_scopes[current_scope->inner_scopes_count-1],return_statement->left);
+		if(type)
+		{
+			if(strcmp(func_node->type,type)==0){
+				printf(" OK \n");
+			}
+			else{
+
+				printf("got here\n");
+			}
+			
+		}
+		else if(strcmp(func_node->type,"void")==0){
+			printf("void func returns nada\n");
+		}
+	}
+	//printf("%s\n",return_statement->token);
+
+}
 void samentise_(scope* current_scope) 
 {
 	node* savestate;
@@ -803,7 +842,7 @@ void samentise_(scope* current_scope)
 				//the above sends the current scope 
 				//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
 				samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
-				check_return_statement()
+				check_return_statement(current_scope,current_scope->scope_head->left->right->right);
 			
 			}
 			if(current_scope->scope_head->right)
@@ -818,24 +857,7 @@ void samentise_(scope* current_scope)
 			check_dec_idents(current_scope);
 			current_scope->scope_head = savestate;
 		}
-		// if(strcmp(current_scope->scope_head->left->token,"function_call")==0)
-		// {
-		// 	int calling_args;
-		// 	int function_args_count;
-		// 	linkedlist *declearation_linkedlist = check_if_func_decleared(current_scope,current_scope->scope_head->left->left->token);
-		// 	if(declearation_linkedlist){
-		// 		calling_args = count_func_call_args(current_scope->scope_head->left);
-		// 		function_args_count = count_function_args(declearation_linkedlist);
-		// 		if(calling_args<function_args_count){
-		// 			printf("%s ",current_scope->scope_head->left->left->token);
-		// 			printf("too few arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
-		// 		}
-		// 		if(calling_args>function_args_count){
-		// 			printf("%s ",current_scope->scope_head->left->left->token);
-		// 			printf("too many arguments from calling function in line [%d]\n",current_scope->scope_head->left->left->row);
-		// 		}
-		// 	}
-		// }
+
 		if(strcmp(current_scope->scope_head->left->token,"expr")==0)
 		{
 			samentise_expr(current_scope,current_scope->scope_head->left->left);
