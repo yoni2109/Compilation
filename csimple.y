@@ -76,10 +76,11 @@ expr:
 			| expr MULT expr { $$=mknode("*",$1,$3,counter);}
 			| expr DIV expr { $$=mknode("/",$1,$3,counter);}
 			| PIPE expr PIPE { $$=mknode("| |",$2,NULL,counter);}	
-			| ident SET expr { $$=mknode("=",$1,$3,counter);}
+			| expr SET expr { $$=mknode("=",$1,$3,counter);}
+		//	| ident_string SET expr { $$=mknode("=",$1,$3,counter);}
 			| value
 			| DEREF ident{ $$=mknode("^",$2,NULL,counter);}
-			| REF ident  { $$=mknode("&",$2,NULL,counter);} 
+			| REF expr  { $$=mknode("&",$2,NULL,counter);} 
 			| str
 			| single_char
 			| function_call
@@ -100,6 +101,7 @@ cond:
 			| cond LE cond{ $$=mknode("<=",$1,$3,counter);}
 			| cond AND cond{ $$=mknode("&&",$1,$3,counter);}
 			| cond OR cond{ $$=mknode("||",$1,$3,counter);}
+			| NOT cond { $$=mknode("!",$2,NULL,counter);}
 			| wraped_cond
 			| expr
 		
@@ -120,7 +122,7 @@ return_statement:
 			|RETURN SEMICOLON{ $$ = mknode("return_statement",mknode("return",NULL,NULL,counter),NULL,counter);}
 
 code_block_if: 	
-			expr SEMICOLON else_statement { $$=mknode("BLOCK",$1,$3,counter);}
+			expr SEMICOLON else_statement { $$=mknode("{}",$1,$3,counter);}
 			|LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK else_statement { $$=mknode("{}",$2,$4,counter);} 
 
 block: 			
@@ -377,12 +379,16 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		type2 = samentise_expr(current_scope,expr_head->right);
 		if(type1&&type2&&strcmp(type1,type2)==0)
 		{
-			printf(" OK \n");
+			//printf(" OK \n");
+			return type1;
+		}
+		else if(type1&&type2&&(strcmp(type1,"charp")==0||strcmp(type1,"intp")==0) && strcmp(type2,"null")==0)
+		{
 			return type1;
 		}
 		else
 		{
-			printf("not ok\n");
+			printf("cannot set an [%s] into [%s] at line[%d]\n",type2,type1,expr_head->row);
 			return NULL;
 		}
 	}
@@ -397,6 +403,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("operator '+' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
 			return NULL;
 		}
 	}
@@ -444,15 +451,42 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 	}
 	if(strcmp(expr_head->token,"^")==0)
 	{
-		//his son is a poiter 
+		//his son is a poiter
+		type1 = samentise_expr(current_scope,expr_head->left);
+		//type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&strcmp(type1,"intp")==0)
+		{
+			return "int";
+		}
+		else if(type1&&strcmp(type1,"charp")==0)
+		{
+			return "char";
+		}
+		else
+		{
+			printf("operator '^' can be used only on pointers and cannot be used on [%s] at line [%d]\n",type1,expr_head->row);
+			return NULL;
+		}
+
 	}
 	if(strcmp(expr_head->token,"&")==0)
 	{
 		//his son is int or char or string[i]
-	}
-	if(strcmp(expr_head->token,"| |")==0)
-	{
-		//his son is int or string and the value return is integer
+				//his son is a poiter
+		type1 = samentise_expr(current_scope,expr_head->left);
+		//type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&strcmp(type1,"int")==0)
+		{
+			return "intp";
+		}
+		else if(type1&&strcmp(type1,"char")==0)
+		{
+			return "charp";
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 	if(strcmp(expr_head->token,"&&")==0)
 	{
@@ -584,10 +618,56 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 	if(strcmp(expr_head->token,"string_at")==0)
 	{
 		// his ident is a string the value in the box must be a integer
+		type1 = samentise_expr(current_scope,expr_head->left->left);
+		type2 = samentise_expr(current_scope,expr_head->left->right);
+		if(type1&&type2&&strcmp(type1,"string")==0&&strcmp(type2,"int")==0)
+		{
+			
+			return "char";
+		}
+		else
+		{
+			if(strcmp(type1,"string")!=0)
+			{
+				printf("operator '[]' cand be used only on a string and cnnot be used on [%s] at line[%d]\n",type1,expr_head->row);
+			}
+			return NULL;
+		}
+		
 	}
 	if(strcmp(expr_head->token,"[]")==0)
 	{
 		// left son must be an integer
+		type1 = samentise_expr(current_scope,expr_head->left);
+		if( type1
+			&&(	strcmp(type1,"int")==0
+				||strcmp(type1,"intp")==0))
+		{
+			return "int";
+		}
+		else
+		{
+			printf ("operator '[]' was used with type[%s] at line[%d] but can be used only with an integer\n",type1,expr_head->row);
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"| |")==0)
+	{
+		// left son must be an integer or a string and return "int"
+		type1 = samentise_expr(current_scope,expr_head->left);
+		if( type1
+			&&(	strcmp(type1,"int")==0
+				||strcmp(type1,"intp")==0
+				||strcmp(type1,"string")==0))
+		{
+			printf("got here ||\n");
+			return "int";
+		}
+		else
+		{
+			printf ("operator '||' was used on type[%s] at line[%d] but can be used only on a string or an integer\n",type1,expr_head->row);
+			return NULL;
+		}
 	}
 	if(strcmp(expr_head->token,"function_call")==0)
 	{
@@ -624,7 +704,16 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 			//printf("token and tralala\n");
 			return idents_node->type;
 		}
-		else return NULL;
+		else if(strcmp(expr_head->token,"null")==0)
+		{
+			return "null";
+		}
+		else
+		{
+			printf("[%s] is beeing used before decleration at line [%d]\n",expr_head->token,expr_head->row);
+			return NULL;
+		} 
+			
 	}
 	return NULL;
 	
@@ -788,29 +877,44 @@ void check_return_statement(scope* current_scope,node* return_statement)
 	}
 	if(return_statement->left)
 	{
+		if(strcmp(return_statement->left->token,"return_statement")==0)
+		{
+			return_statement = return_statement->left;
+		}
 		type = samentise_expr(current_scope->inner_scopes[current_scope->inner_scopes_count-1],return_statement->left);
 		if(type)
 		{
 			if(strcmp(func_node->type,type)==0){
-				printf(" OK \n");
+				//printf(" OK \n");
 			}
 			else{
 
-				printf("got here\n");
+				printf("the function [%s] is from [%s] type and cannot return an [%s] at line [%d]\n",func_node->ident,func_node->type,type,return_statement->row);
 			}
 			
 		}
 		else if(strcmp(func_node->type,"void")==0){
 			printf("void func returns nada\n");
 		}
+		else
+		{
+			printf("error at return statement at line [%d]\n",return_statement->row);
+		}
+	
 	}
-	//printf("%s\n",return_statement->token);
 
 }
 void samentise_(scope* current_scope) 
 {
 	node* savestate;
 	scope *innerscope;
+	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"else")==0)
+	{
+		if(current_scope->scope_head->left->token&&strcmp(current_scope->scope_head->left->token,"{}")==0)
+		{
+			current_scope->scope_head = current_scope->scope_head->left;
+		}
+	}
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"{}")==0)
 	{
 		
@@ -862,6 +966,33 @@ void samentise_(scope* current_scope)
 		{
 			samentise_expr(current_scope,current_scope->scope_head->left->left);
 		}
+		if(strcmp(current_scope->scope_head->left->token,"if")==0)
+		{
+			if(strcmp(current_scope->scope_head->left->left->token,"()")==0)
+			{
+				node* savestate = current_scope->scope_head;
+				char* type = samentise_expr(current_scope,current_scope->scope_head->left->left->left);
+				if(type && strcmp(type,"boolean")==0)
+				{
+					//printf("got here\n");
+					current_scope->scope_head = current_scope->scope_head->left->right;
+					samentise_(current_scope);
+				}
+				//printf("[%s]\n",type);
+				current_scope->scope_head = savestate;
+				if(current_scope->scope_head->left
+				&&current_scope->scope_head->left->right
+				&&current_scope->scope_head->left->right->right
+				&&strcmp(current_scope->scope_head->left->right->right->token,"else")==0)
+				{
+					current_scope->scope_head = current_scope->scope_head->left->right->right;
+					samentise_(current_scope);
+					//printf("here\n");
+				}
+				current_scope->scope_head = savestate;
+			}
+			//samentise_expr(current_scope,current_scope->scope_head->left->left);
+		}
 
 	}
 	if(current_scope->scope_head&&current_scope->scope_head->right)
@@ -879,6 +1010,9 @@ void semantica(node *tree)
 	printf("\n\n");
 	scope *globalscope = mk_scope(tree,NULL); // firsr scope is the global scope 
 	samentise_(globalscope); 
+	if(flag_main == 0){
+		printf("culdn find any main function in the program\n");
+	}
 
 }
 

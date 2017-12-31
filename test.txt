@@ -1,9 +1,24 @@
 boolean functionfortets13(int b,int k){
-    int ax;
+    string str;
+    intp ptra;
     boolean bx;
-    functionfortets13(ax,ax);
-    bx = ax;
-    return ax ;
+    char ch;
+    int ax;
+    ax=2;
+    ax=ax+15;
+    ax = ^ptra;
+    str[ax] = ch;
+    ptra = null; 
+    if(ax>ax){
+        ax = ax;
+    } 
+    else if(ax>ax){
+        ax = ax;
+    }
+    else{
+        ax = ax;
+    }
+    return bx ;
     
 }
 
