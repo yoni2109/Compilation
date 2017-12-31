@@ -3,3 +3,56 @@ void foo(int a)
     int a,b,c,d;
     return a;
 }
+
+void foo(int b)
+{
+    int b;
+    int c;
+    char x;
+    x = c;
+    foo();
+    foo(b,c);
+    foo(x);
+    return;
+}
+void main()
+{
+    intp ptri;
+    charp ptrc;
+    int x;
+    string str;
+    char ch;
+    ptri = &x;
+    ptri = x;
+    ptri = ^x;
+    x = ptri;
+    x = ^ptri;
+    ^ptri = x;
+    if(x){
+        x=x+1;
+    }
+    while(x)
+    {
+        x=x+1;
+    }
+    do{
+        x=x+1;
+    }while(x);
+    for(x=0;x;x=x+1){
+        x=x;
+    }
+    str[x];
+    str[ch];
+    x[x];
+    x=str;
+    str = "abcd";
+    if(x&&ch){
+        x=x;
+    }
+    return 0;
+    
+}
+int main(int av)
+{
+    return av;
+}

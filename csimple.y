@@ -188,7 +188,7 @@ ident_string:
 			ident string { $$ = mknode(NULL,$1,$2,counter);}
 
 string:
-			LEFT_SQR_BRAK value RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL,counter);}					
+			LEFT_SQR_BRAK expr RIGHT_SQR_BRAK { $$ = mknode("[]",$2,NULL,counter);}					
 
 type: 		
 			BOOLEAN{ $$=mknode(yytext,NULL,NULL,counter);}
@@ -418,6 +418,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("operator '-' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
 			return NULL;
 		}
 	}
@@ -432,6 +433,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("operator '*' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
 			return NULL;
 		}
 	}
@@ -446,6 +448,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("operator '*' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
 			return NULL;
 		}
 	}
@@ -499,6 +502,22 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'&&' operator works only with 2 bollean operands line[%d]\n",expr_head->row);
+			return NULL;
+		}
+	}
+	if(strcmp(expr_head->token,"!")==0)
+	{
+		//both sides are boolean
+		type1 = samentise_expr(current_scope,expr_head->left);
+		type2 = samentise_expr(current_scope,expr_head->right);
+		if(type1&&strcmp(type1,"boolean")==0)
+		{
+			return type1;
+		}
+		else
+		{
+			printf("'!' operator works only with bollean operand line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -513,6 +532,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'||' operator works only with 2 bollean operands line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -527,6 +547,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'<' operator works only with 2 integer operands line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -541,6 +562,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'>' operator works only with 2 integer operands line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -555,6 +577,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'<=' operator works only with 2 integer operands line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -569,6 +592,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'>=' operator works only with 2 integer operands line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -588,6 +612,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'==' operator works only with 2 operands of the same type line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -607,6 +632,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
+			printf("'!=' operator works only with 2 operands of the same type line[%d]\n",expr_head->row);
 			return NULL;
 		}
 	}
@@ -695,6 +721,9 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 			return declearation_linkedlist->type;
 			}
 	}
+	if(expr_head&&expr_head->token[0]=='"'){
+		return "string";
+	}
 	if(expr_head&&expr_head->token)
 	{
 		//check if identifiere decleared and return his type
@@ -749,7 +778,7 @@ void cehck_func_dec(node *dec_stat,linkedlist *current)
 	if( (current->ident&&strcmp(dec_stat->left->right->token,current->ident)==0)//we check also if there is main and the ident is main
 	   ||((current->ident&&strcmp("main",dec_stat->left->right->token)==0) && (flag_main==1)))//we also can copy this if only for the main
 	{
-		printf("%s already defined\n",dec_stat->left->right->token);
+		printf("in line [%d]: [%s] already defined \n",dec_stat->row,dec_stat->left->right->token);
 		return;
 	}
 	
@@ -980,7 +1009,7 @@ void samentise_(scope* current_scope)
 				}
 				else
 				{
-					printf("while condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->row);
+					printf("'if' condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->row);
 
 				}
 				//printf("[%s]\n",type);
