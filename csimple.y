@@ -141,7 +141,7 @@ loop_statement:
 do_while_statement: 
 			DO code_block while_statement_do_while { $$ = mknode("do",$2,$3,counter);}
 while_statement_do_while:
-			WHILE wraped_cond{ $$ = mknode("while",$2,NULL,counter);}
+			WHILE wraped_cond SEMICOLON{ $$ = mknode("while",$2,NULL,counter);}
 while_statement: 
 			WHILE wraped_cond loop_code_block{ $$ = mknode("while",$2,$3,counter);}
 			
@@ -978,6 +978,11 @@ void samentise_(scope* current_scope)
 					current_scope->scope_head = current_scope->scope_head->left->right;
 					samentise_(current_scope);
 				}
+				else
+				{
+					printf("while condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->row);
+
+				}
 				//printf("[%s]\n",type);
 				current_scope->scope_head = savestate;
 				if(current_scope->scope_head->left
@@ -992,6 +997,64 @@ void samentise_(scope* current_scope)
 				current_scope->scope_head = savestate;
 			}
 			//samentise_expr(current_scope,current_scope->scope_head->left->left);
+		}
+		if(strcmp(current_scope->scope_head->left->token,"while")==0)
+		{
+			if(strcmp(current_scope->scope_head->left->left->token,"()")==0)
+			{
+				node* savestate = current_scope->scope_head;
+				char* type = samentise_expr(current_scope,current_scope->scope_head->left->left->left);
+				if(type && strcmp(type,"boolean")==0)
+				{
+					//printf("got here\n");
+					current_scope->scope_head = current_scope->scope_head->left->right;
+					samentise_(current_scope);
+				}
+				else
+				{
+					printf("while condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->row);
+
+				}
+				//printf("[%s]\n",type);
+				current_scope->scope_head = savestate;
+			}
+			//samentise_expr(current_scope,current_scope->scope_head->left->left);
+		}
+		if(strcmp(current_scope->scope_head->left->token,"do")==0)
+		{
+			if(strcmp(current_scope->scope_head->left->left->token,"{}")==0)
+			{
+				node* savestate = current_scope->scope_head;
+				current_scope->scope_head = current_scope->scope_head->left->left;
+				samentise_(current_scope);
+				current_scope->scope_head = savestate;
+				char* type = samentise_expr(current_scope,current_scope->scope_head->left->right->left->left);
+				if(type && strcmp(type,"boolean")!=0)
+				{
+					printf("while condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->right->left->left->row);
+					
+				}
+				//printf("[%s]\n",type);
+			}
+			//samentise_expr(current_scope,current_scope->scope_head->left->left);
+		}
+		if(strcmp(current_scope->scope_head->left->token,"for")==0)
+		{
+			samentise_expr(current_scope,current_scope->scope_head->left->left->left->left->left);
+			samentise_expr(current_scope,current_scope->scope_head->left->left->left->right->right);
+			char* type = samentise_expr(current_scope,current_scope->scope_head->left->left->left->right->left);
+			if(type && strcmp(type,"boolean")!=0)
+			{
+				printf("'for' condition must be of boolean type at line[%d]\n",current_scope->scope_head->left->row);
+				
+			}
+			node* savestate = current_scope->scope_head;
+			current_scope->scope_head = current_scope->scope_head->left->right;
+			samentise_(current_scope);
+			//printf("got here\n");
+			current_scope->scope_head = savestate;
+
+
 		}
 
 	}
