@@ -48,9 +48,9 @@ int counter = 1;
 "," return COMMA; 
 "||" return OR;
 "|" return PIPE;
+"/*"((\*+[^/*])|([^*]))*\**"*/" ; 
 \"(\\.|[^"\\\n])*\" return STR;
 
-"/*"(\\.|[^"\\])*"*/" ; 
 "//"(\\.|[^"\\\n])* ;
 
 \" return QUOTS;

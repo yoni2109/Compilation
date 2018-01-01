@@ -51,11 +51,13 @@ program:
 line:  	
 			statement  
 			| expr SEMICOLON { $$ = mknode("expr",$1,NULL,counter);}
+			| return_statement { $$ = mknode("expr",$1,NULL,counter);}
+			
 
 statement: 	
-			//decleration_statement SEMICOLON  /*statements as if \ if else \ loops \ functions*/	
 			if_statement 
 			| loop_statement 
+			
 
 function_decleration:
 			type_ident_for_function wraped_arguments{ $$ = mknode("function decleration",$1,$2,counter);}
@@ -70,6 +72,7 @@ func_args:
 			type_ident_for_function func_args { $$=mknode(NULL,$1,$2,counter);}
 			| COMMA func_args { $$=$2;}
 			|/*epsilon*/
+
 expr:		  
 			  expr PLUS expr { $$ = mknode("+",$1,$3,counter);}
 			| expr MINUS expr { $$=mknode("-",$1,$3,counter);}
@@ -77,13 +80,16 @@ expr:
 			| expr DIV expr { $$=mknode("/",$1,$3,counter);}
 			| PIPE expr PIPE { $$=mknode("| |",$2,NULL,counter);}	
 			| expr SET expr { $$=mknode("=",$1,$3,counter);}
-		//	| ident_string SET expr { $$=mknode("=",$1,$3,counter);}
 			| value
 			| DEREF ident{ $$=mknode("^",$2,NULL,counter);}
 			| REF expr  { $$=mknode("&",$2,NULL,counter);} 
 			| str
 			| single_char
 			| function_call
+			
+			
+
+			
 
 function_call:
 			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode("function_call",$1,$3,counter);}
@@ -114,12 +120,12 @@ loop_code_block:
 			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL,counter);} 
 			|	expr SEMICOLON { $$ = $1;}
 function_code_block:
-			LEFT_BLOCK_BRAK block return_statement RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3,counter);} 
+			LEFT_BLOCK_BRAK block /*return_statement*/ RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3,counter);} 
 			| /*epsilon*/
 
 return_statement:
 			RETURN expr SEMICOLON { $$ = mknode("return_statement",$2,NULL,counter);}
-			|RETURN SEMICOLON{ $$ = mknode("return_statement",mknode("return",NULL,NULL,counter),NULL,counter);}
+			|RETURN SEMICOLON{ $$ = mknode("return_statement",NULL/*mknode("return",NULL,NULL,counter)*/,NULL,counter);}
 
 code_block_if: 	
 			expr SEMICOLON else_statement { $$=mknode("{}",$1,$3,counter);}
@@ -367,10 +373,15 @@ linkedlist* check_if_ident_decleared(char* ident,scope* current_scope)
 	return NULL;
 }
 void check_args(scope* current,node* args_calling,linkedlist * functions_list);
+void check_return_statement(scope* current_scope,node* return_statement);
 
 char* samentise_expr(scope* current_scope,node* expr_head)
 {
 	char* type1,*type2;
+	if(strcmp(expr_head->token,"()")==0)
+	{
+		return samentise_expr(current_scope,expr_head->left);
+	}
 	if(strcmp(expr_head->token,"=")==0)
 	{
 		//both sides are of the same type
@@ -471,6 +482,11 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 			return NULL;
 		}
 
+	}
+	if(strcmp(expr_head->token,"return_statement")==0)
+	{	
+		check_return_statement(current_scope,expr_head);
+		return NULL;
 	}
 	if(strcmp(expr_head->token,"&")==0)
 	{
@@ -686,7 +702,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 				||strcmp(type1,"intp")==0
 				||strcmp(type1,"string")==0))
 		{
-			printf("got here ||\n");
+			//printf("got here | |\n");
 			return "int";
 		}
 		else
@@ -715,7 +731,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 			if(calling_args == function_args_count)
 			{
 				check_args(current_scope,expr_head,declearation_linkedlist);
-				printf("checked args\n");
+				//printf("checked args\n");
 			}
 			//check correction of args
 			return declearation_linkedlist->type;
@@ -723,6 +739,10 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 	}
 	if(expr_head&&expr_head->token[0]=='"'){
 		return "string";
+	}
+	if(expr_head&&expr_head->token[0]=='\'')
+	{
+		return "char";
 	}
 	if(expr_head&&expr_head->token)
 	{
@@ -736,6 +756,10 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		else if(strcmp(expr_head->token,"null")==0)
 		{
 			return "null";
+		}
+		else if(strcmp(expr_head->token,"true")==0 ||strcmp(expr_head->token,"false")==0)
+		{
+			return "boolean";
 		}
 		else
 		{
@@ -845,6 +869,26 @@ void check_dec_idents(scope* current_scope)
 	current_scope->scope_head = current_scope->scope_head->left;
 	char* type = strdup(current_scope->scope_head->left->token);
 	char* identifier;
+	if(strcmp(type,"string")==0)
+	{
+		while(current_scope->scope_head->right)
+		{
+			current_scope->scope_head =current_scope->scope_head->right;
+			identifier =NULL;
+			identifier = strdup(current_scope->scope_head->left->left->token);
+			check_ident_decleration(identifier,type,current_scope->scops_list);
+			if(check_dec_flag==1)
+			{
+				check_dec_flag=0;	
+			}
+			if(current_scope->scope_head->right){
+				current_scope->scope_head=current_scope->scope_head->right;
+			}
+
+		}
+		return;	
+
+	}
 	while(current_scope->scope_head->right)
 	{
 		current_scope->scope_head =current_scope->scope_head->right;
@@ -899,19 +943,23 @@ void add_arguments(scope *globalscope,node* args_head)
 void check_return_statement(scope* current_scope,node* return_statement)
 {
 	char* type;
-	linkedlist* func_node = current_scope->scops_list;
+	linkedlist* func_node = current_scope->outter_scope->scops_list;
 	while(func_node->right)
 	{
 		func_node = func_node->right;
 	}
-	if(return_statement->left)
+	if(return_statement&& func_node->type)
 	{
-		if(strcmp(return_statement->left->token,"return_statement")==0)
+		if(strcmp(return_statement->token,"return_statement")==0)
 		{
 			return_statement = return_statement->left;
+
 		}
-		type = samentise_expr(current_scope->inner_scopes[current_scope->inner_scopes_count-1],return_statement->left);
-		if(type)
+		type = NULL;
+		if(return_statement&&return_statement->token){
+		type = samentise_expr(current_scope,return_statement);
+		}
+		if(type!=NULL)
 		{
 			if(strcmp(func_node->type,type)==0){
 				//printf(" OK \n");
@@ -961,12 +1009,13 @@ void samentise_(scope* current_scope)
 			if(check_dec_flag == 1)
 			{
 				check_dec_flag=0;
-				if(current_scope->inner_scopes_count==0){
+				int count_scops = current_scope->inner_scopes_count;
+				if(count_scops==0){
 					current_scope->inner_scopes = (scope**)malloc(sizeof(scope*)+1);
 					current_scope->inner_scopes_count++;
 				}
-				else if(current_scope->inner_scopes_count){
-					current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,current_scope->inner_scopes_count+1);
+				else if(count_scops>0){
+					current_scope->inner_scopes = (scope**)realloc(current_scope->inner_scopes,(count_scops+1)*sizeof(scope*));
 					current_scope->inner_scopes_count++;
 				}
 			
@@ -975,7 +1024,7 @@ void samentise_(scope* current_scope)
 				//the above sends the current scope 
 				//(so the args culd be added to functions list and to inner scops list) and the head of args tree 
 				samentise_(current_scope->inner_scopes[current_scope->inner_scopes_count-1]);
-				check_return_statement(current_scope,current_scope->scope_head->left->right->right);
+				//check_return_statement(current_scope,current_scope->scope_head->left->right->right);
 			
 			}
 			if(current_scope->scope_head->right)
@@ -1098,7 +1147,7 @@ void samentise_(scope* current_scope)
 void semantica(node *tree)
 {//recivce a tree from lexical analizer
     node *head = tree;
-	printtree(tree);
+	//printtree(tree);
 	printf("\n\n");
 	scope *globalscope = mk_scope(tree,NULL); // firsr scope is the global scope 
 	samentise_(globalscope); 

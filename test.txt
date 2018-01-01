@@ -1,58 +1,164 @@
-void foo(int a)
+/*long comment
+long comment
+long comment*/
+boolean foo1(int a, int d, int y, char c)
 {
-    int a,b,c,d;
-    return a;
+	char x, b;
+	boolean res;
+    string s1[100];
+
+	b = '&';
+	// a = x;  
+	// b = 8; 
+	a = y * 7/a-y;
+	// a = (y * 7)/b-y; 
+	// a = (y * 7)/a-c; 
+
+	if((b == c ) && (y > a))
+    {
+        res = true;
+    }
+    else
+    {
+        res = false;
+    }
+	// res = (b == c) && (y + a); 
+	// 3 + 6 = 9; 
+	// ^x = 6; 
+	
+    	return res ;
 }
 
-void foo(int b)
+
+int fee1(int i, int j, int k)
 {
-    int b;
-    int c;
-    char x;
-    x = c;
-    foo();
-    foo(b,c);
-    foo(x);
-    return;
+    char x, k;
+    boolean fee2(int l, int m, int n)
+    {
+	boolean x, j, n;
+	k = '@';
+	i = l + l;
+	// i = j + 1;
+	// i = k + 1; 
+	if ((k == '*') || (x != false) && (l+m < i)){
+        if(l<m){
+            x = true;
+        }
+        else{
+            x = false;
+        }
+		//x = l < m;
+	}
+	//return m;
+        return x;
+    }
+    
+	boolean k;
+	k = fee2(5,i,j);
+	// x = fee2(5,i,j); 
+	// k = fee2(5,i); 
+	// k = fee2(5,x,j); 
+     
+    // n = false; 
+    x = '#';	
+    //return k;
+    return 0;
 }
+
+
+int foo3(int i, int j, int k)
+{
+    int square(int t) /* procedure declarations */ 
+    {
+        int temp;
+        temp = t* t;
+        return temp;
+    }
+
+    int total;                       /* variable declarations */
+    boolean bool;
+    bool = foo1(i,j,k,'^');
+    // j = foo2(); 
+    total = square(i+j+k);
+    return 0;
+}
+
+
+int foo2() 
+{
+    string s1[100], s2[200];
+    int i, j, cnt;
+    //x=x+1;                    
+    /* statements */
+    i=0;
+    j=0;
+    cnt = 1;
+    while(i<|s1|){
+        while(i<|s1|/2){
+            if(true==true){
+                x=x;
+            }
+        }
+        //xdsa=1;
+	    
+		//cnt = cnt*2;
+	
+	    //j=j+1;
+	
+	i=i+1;
+    }
+    return cnt;
+}
+
+
+void foo4()
+{
+    //xdsaa = 1;
+       
+	int x;
+	intp y;
+	x = 5;
+	y = &x;
+	x = 6;
+	//^x = 7;
+	//&x = y;
+	//y = x;
+	if (&x == y && ^y == x){
+		^y = 9;
+	}
+     	
+		//charp x;
+		//string y[10];
+		//char z;
+		y = "foobar";
+		//y='b';
+		x = &y[5];
+		//x=&y; 
+		z = ^x;        
+		//z = ^x - 5;       
+		y = "barfoo"; 
+   		// {
+			//char x;
+			//intp y;
+			//charp z;
+			//char g;
+
+			x = ^z; 
+			// f = x;
+			// x = &(1+3);
+			//y = &x;             
+			//z = &(&g);
+    	//	  }
+		 //z = x;
+		 // z = &x;
+	 return ;
+}
+
+
+
 void main()
 {
-    intp ptri;
-    charp ptrc;
-    int x;
-    string str;
-    char ch;
-    ptri = &x;
-    ptri = x;
-    ptri = ^x;
-    x = ptri;
-    x = ^ptri;
-    ^ptri = x;
-    if(x){
-        x=x+1;
-    }
-    while(x)
-    {
-        x=x+1;
-    }
-    do{
-        x=x+1;
-    }while(x);
-    for(x=0;x;x=x+1){
-        x=x;
-    }
-    str[x];
-    str[ch];
-    x[x];
-    x=str;
-    str = "abcd";
-    if(x&&ch){
-        x=x;
-    }
-    return 0;
-    
-}
-int main(int av)
-{
-    return av;
+    int a;
+    //x=x+1;
+    a = foo2();
 }
