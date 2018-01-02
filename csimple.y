@@ -14,7 +14,13 @@
 	#define YYSTYPE struct node *
 %}
 %start recived_program
-%token BOOLEAN,CHAR,VOID,INT,STRING,INTP,CHARP /*declerations*/
+%token BOOLEAN
+%token CHAR
+%token VOID
+%token INT
+%token STRING
+%token INTP
+%token CHARP /*declerations*/
 %token IF,ELSE /*if\else*/
 %token WHILE,DO,FOR /*loops*/
 %token RETURN, _NULL /**/
@@ -26,8 +32,12 @@
 %token OCTAL_NUM, HEX_NUM , BINARY_NUM
 %token LEFT_CIRC_BRAK,RIGHT_CIRC_BRAK,LEFT_SQR_BRAK,RIGHT_SQR_BRAK,LEFT_BLOCK_BRAK,RIGHT_BLOCK_BRAK
 %left SET
-%left PLUS
-%left AND,DIV,EQ,GT,GE,LT,LE,MINUS,NOT,NE,MULT,REF,DEREF,OR,PIPE
+%left LT GT GE LE EQ
+%left PLUS MINUS
+%left MULT DIV
+%left AND,NOT,NE,REF,DEREF,OR,PIPE
+%right LEFT_CIRC_BRAK
+
 %%
 
 recived_program: /*recived program is the first reduce terminal*/
@@ -41,17 +51,20 @@ declerations:
 			function_decleration function_code_block{ $$ = mknode("function",$1,$2,counter);} 
 			| decleration_statement SEMICOLON
 			
-//lines:  
-//			program 
+
 			
 program:
 			line  program{ $$ = mknode(NULL,$1,$2,counter);}
+			| LEFT_BLOCK_BRAK program RIGHT_BLOCK_BRAK program{ $$ = mknode("BLOCK",$2,$4,counter);}
 			|/*epsilon*/
+			
 
 line:  	
 			statement  
 			| expr SEMICOLON { $$ = mknode("expr",$1,NULL,counter);}
 			| return_statement { $$ = mknode("expr",$1,NULL,counter);}
+			
+			
 			
 
 statement: 	
@@ -74,7 +87,8 @@ func_args:
 			|/*epsilon*/
 
 expr:		  
-			  expr PLUS expr { $$ = mknode("+",$1,$3,counter);}
+			  LEFT_CIRC_BRAK expr RIGHT_CIRC_BRAK { $$=$2;}
+			| expr PLUS expr { $$ = mknode("+",$1,$3,counter);}
 			| expr MINUS expr { $$=mknode("-",$1,$3,counter);}
 			| expr MULT expr { $$=mknode("*",$1,$3,counter);}
 			| expr DIV expr { $$=mknode("/",$1,$3,counter);}
@@ -86,10 +100,17 @@ expr:
 			| str
 			| single_char
 			| function_call
-			
-			
-
-			
+			| expr EQ expr{ $$=mknode("==",$1,$3,counter);}
+			| expr NE expr{ $$=mknode("!=",$1,$3,counter);}
+			| expr GT expr{ $$=mknode(">",$1,$3,counter);}
+			| expr GE expr{ $$=mknode(">=",$1,$3,counter);}
+			| expr LT expr{ $$=mknode("<",$1,$3,counter);}
+			| expr LE expr{ $$=mknode("<=",$1,$3,counter);}
+			| expr AND expr{ $$=mknode("&&",$1,$3,counter);}
+			| expr OR expr{ $$=mknode("||",$1,$3,counter);}
+			| NOT expr { $$=mknode("!",$2,NULL,counter);}
+			// | wraped_cond
+			// | expr
 
 function_call:
 			ident LEFT_CIRC_BRAK expr_list RIGHT_CIRC_BRAK { $$=mknode("function_call",$1,$3,counter);}
@@ -98,18 +119,6 @@ expr_list:
 			| COMMA expr_list { $$=$2;}
 			|/*epsilon*/
 					
-cond: 		 
-			  cond EQ cond{ $$=mknode("==",$1,$3,counter);}
-			| cond NE cond{ $$=mknode("!=",$1,$3,counter);}
-			| cond GT cond{ $$=mknode(">",$1,$3,counter);}
-			| cond GE cond{ $$=mknode(">=",$1,$3,counter);}
-			| cond LT cond{ $$=mknode("<",$1,$3,counter);}
-			| cond LE cond{ $$=mknode("<=",$1,$3,counter);}
-			| cond AND cond{ $$=mknode("&&",$1,$3,counter);}
-			| cond OR cond{ $$=mknode("||",$1,$3,counter);}
-			| NOT cond { $$=mknode("!",$2,NULL,counter);}
-			| wraped_cond
-			| expr
 		
 if_statement: 	
 			IF wraped_cond code_block_if { $$=mknode("if",$2,$3,counter);} 
@@ -120,8 +129,8 @@ loop_code_block:
 			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL,counter);} 
 			|	expr SEMICOLON { $$ = $1;}
 function_code_block:
-			LEFT_BLOCK_BRAK block /*return_statement*/ RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,$3,counter);} 
-			| /*epsilon*/
+			LEFT_BLOCK_BRAK block RIGHT_BLOCK_BRAK { $$=mknode("{}",$2,NULL,counter);} 
+			//| /*epsilon*/
 
 return_statement:
 			RETURN expr SEMICOLON { $$ = mknode("return_statement",$2,NULL,counter);}
@@ -164,11 +173,11 @@ first_expr :
 			expr SEMICOLON { $$=mknode (";",$1,NULL,counter);}
 
 sec_expr : 
-			cond SEMICOLON expr { $$ = mknode (";",$1,$3,counter);}
+			expr SEMICOLON expr { $$ = mknode (";",$1,$3,counter);}
 
 wraped_cond: 	
-			LEFT_CIRC_BRAK cond RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL,counter);}
-			|/*epsilon*/
+			LEFT_CIRC_BRAK expr RIGHT_CIRC_BRAK{ $$=mknode("()",$2,NULL,counter);}
+			//|/*epsilon*/
 
 value: 		
 			NUM{ $$=mknode(yytext,NULL,NULL,counter);} 
@@ -177,7 +186,7 @@ value:
 			| OCTAL_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
 			| BINARY_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
 			| HEX_NUM { $$=mknode(yytext,NULL,NULL,counter);} 
-			| ident /*{ $$ = mknode("ident",$1,NULL,counter);}*/
+			| ident/*{ $$ = mknode("ident",$1,NULL,counter);}*/
 			| ident_string { $$ = mknode("string_at",$1,NULL,counter);}
 			| _NULL { $$=mknode(yytext,NULL,NULL,counter);}
 			
@@ -207,6 +216,10 @@ type:
 
 ident: 	
 			IDENTIFIERE { $$=mknode(yytext,NULL,NULL,counter);}
+// ident_value: 	
+ //			IDENTIFIERE { $$=mknode(yytext,NULL,NULL,counter);}
+// ident_func: 	
+// 			IDENTIFIERE { $$=mknode(yytext,NULL,NULL,counter);}
 
 str:	
 			STR   { $$=mknode(yytext,NULL,NULL,counter);}
@@ -415,6 +428,8 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		else
 		{
 			printf("operator '+' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
+			//printf("[%s] [%s]\n",type1,type2);
+			printtree(expr_head->right);
 			return NULL;
 		}
 	}
@@ -444,7 +459,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
-			printf("operator '*' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type2,expr_head->row);
+			printf("operator '*' can be used only with integers and cannot be used on an [%s] type at line [%d]\n",type1,expr_head->row);
 			return NULL;
 		}
 	}
@@ -629,6 +644,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		else
 		{
 			printf("'==' operator works only with 2 operands of the same type line[%d]\n",expr_head->row);
+			//printf("[%s] [%s]\n",type1,type2);
 			return NULL;
 		}
 	}
@@ -662,6 +678,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		// his ident is a string the value in the box must be a integer
 		type1 = samentise_expr(current_scope,expr_head->left->left);
 		type2 = samentise_expr(current_scope,expr_head->left->right);
+		//printf("got here\n");
 		if(type1&&type2&&strcmp(type1,"string")==0&&strcmp(type2,"int")==0)
 		{
 			
@@ -669,7 +686,7 @@ char* samentise_expr(scope* current_scope,node* expr_head)
 		}
 		else
 		{
-			if(strcmp(type1,"string")!=0)
+			if(type1&&strcmp(type1,"string")!=0)
 			{
 				printf("operator '[]' cand be used only on a string and cnnot be used on [%s] at line[%d]\n",type1,expr_head->row);
 			}
@@ -838,7 +855,7 @@ void check_ident_decleration(char* dec_ident,char* type,linkedlist* current)
 {
 		if(current->ident&&strcmp(dec_ident,current->ident)==0)
 	{
-		printf("%s already defined\n",current->ident);
+		printf("[%s] redecleration ",current->ident);
 		return;
 	}
 	else
@@ -877,6 +894,10 @@ void check_dec_idents(scope* current_scope)
 			identifier =NULL;
 			identifier = strdup(current_scope->scope_head->left->left->token);
 			check_ident_decleration(identifier,type,current_scope->scops_list);
+			if(check_dec_flag==0)
+			{
+				printf (" at line [%d]\n",current_scope->scope_head->left->row);
+			}
 			if(check_dec_flag==1)
 			{
 				check_dec_flag=0;	
@@ -895,6 +916,10 @@ void check_dec_idents(scope* current_scope)
 		identifier =NULL;
 		identifier = strdup(current_scope->scope_head->left->token);
 		check_ident_decleration(identifier,type,current_scope->scops_list);
+		if(check_dec_flag==0)
+		{
+			printf (" at line [%d]\n",current_scope->scope_head->left->row);
+		}
 		if(check_dec_flag==1)
 		{
 			check_dec_flag=0;	
@@ -985,6 +1010,17 @@ void samentise_(scope* current_scope)
 {
 	node* savestate;
 	scope *innerscope;
+	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"BLOCK")==0)
+	{
+		//printf("gothere\n");
+		node* innerblock = current_scope->scope_head;
+		current_scope->scope_head = current_scope->scope_head->left;
+		samentise_(current_scope);
+		if(innerblock->right){
+		current_scope->scope_head = innerblock->right;
+		}
+		else return;
+	}
 	if(current_scope->scope_head->token&&strcmp(current_scope->scope_head->token,"else")==0)
 	{
 		if(current_scope->scope_head->left->token&&strcmp(current_scope->scope_head->left->token,"{}")==0)
